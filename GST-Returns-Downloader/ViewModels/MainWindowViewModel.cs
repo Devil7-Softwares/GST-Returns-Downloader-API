@@ -13,5 +13,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
 
         public string RegisteredName { get; }
         public string RegisteredGSTIN { get; }
+
+        public bool IsBusy { get; set; }
+        public string Status { get; set; }
     }
 }
