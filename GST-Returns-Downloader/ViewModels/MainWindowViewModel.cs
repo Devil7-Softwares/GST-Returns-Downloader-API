@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GST_Returns_Downloader.ViewModels
+namespace Devil7.Automation.GSTR.Downloader.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {

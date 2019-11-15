@@ -1,7 +1,7 @@
 using Avalonia;
 using Avalonia.Markup.Xaml;
 
-namespace GST_Returns_Downloader
+namespace Devil7.Automation.GSTR.Downloader
 {
     public class App : Application
     {

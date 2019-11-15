@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RootNamespace>Devil7.Automation.GSTR.Downloader</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Models\" />

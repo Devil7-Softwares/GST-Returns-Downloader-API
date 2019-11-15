@@ -2,7 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 
-namespace GST_Returns_Downloader.Views
+namespace Devil7.Automation.GSTR.Downloader.Views
 {
     public class MainWindow : Window
     {

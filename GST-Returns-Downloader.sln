@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GST-Returns-Downloader", "GST-Returns-Downloader\GST-Returns-Downloader.csproj", "{D9649F90-2722-4341-93B2-1AF77B52429F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Devil7.Automation.GSTR.Downloader", "GST-Returns-Downloader\Devil7.Automation.GSTR.Downloader.csproj", "{D9649F90-2722-4341-93B2-1AF77B52429F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

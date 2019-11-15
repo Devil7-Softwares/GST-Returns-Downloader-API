@@ -4,9 +4,9 @@
 using System;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using GST_Returns_Downloader.ViewModels;
+using Devil7.Automation.GSTR.Downloader.ViewModels;
 
-namespace GST_Returns_Downloader
+namespace Devil7.Automation.GSTR.Downloader
 {
     public class ViewLocator : IDataTemplate
     {

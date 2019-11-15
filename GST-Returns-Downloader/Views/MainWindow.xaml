@@ -1,12 +1,12 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="clr-namespace:GST_Returns_Downloader.ViewModels;assembly=GST_Returns_Downloader"
+        xmlns:vm="clr-namespace:Devil7.Automation.GSTR.Downloader.ViewModels;assembly=Devil7.Automation.GSTR.Downloader"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="GST_Returns_Downloader.Views.MainWindow"
+        x:Class="Devil7.Automation.GSTR.Downloader.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
-        Title="GST_Returns_Downloader">
+        Title="Devil7.Automation.GSTR.Downloader">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>

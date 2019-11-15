@@ -1,10 +1,10 @@
 ﻿using System;
 using Avalonia;
 using Avalonia.Logging.Serilog;
-using GST_Returns_Downloader.ViewModels;
-using GST_Returns_Downloader.Views;
+using Devil7.Automation.GSTR.Downloader.ViewModels;
+using Devil7.Automation.GSTR.Downloader.Views;
 
-namespace GST_Returns_Downloader
+namespace Devil7.Automation.GSTR.Downloader
 {
     class Program
     {
