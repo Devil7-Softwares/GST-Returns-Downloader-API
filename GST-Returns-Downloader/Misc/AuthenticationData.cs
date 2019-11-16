@@ -6,9 +6,9 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
     {
         public AuthenticationData(string username, string password, string captcha)
         {
-            this.username = "";
-            this.password = "";
-            this.captcha = "";
+            this.username = username;
+            this.password = password;
+            this.captcha = captcha;
 
             this.deviceID = null;
             this.type = "username";
