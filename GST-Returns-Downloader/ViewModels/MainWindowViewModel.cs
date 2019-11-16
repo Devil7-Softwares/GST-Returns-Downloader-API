@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using Devil7.Automation.GSTR.Downloader.Misc;
+using Devil7.Automation.GSTR.Downloader.Models;
 using Newtonsoft.Json;
 using ReactiveUI;
 using RestSharp;
@@ -17,7 +18,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
 
             this.InitializeAPI = ReactiveCommand.CreateFromTask (initializeAPI);
             this.RefreshCaptcha = ReactiveCommand.CreateFromTask (refreshCaptcha);
-            this.Authendicate = ReactiveCommand.CreateFromTask (authendicate);
+            this.Authendicate = ReactiveCommand.CreateFromTask<CommandResult> (authendicate);
             this.KeepAlive = ReactiveCommand.CreateFromTask<string> (keepAlive);
         }
         #endregion
@@ -105,9 +106,10 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
             });
         }
 
-        public ReactiveCommand<Unit, Unit> Authendicate { get; }
-        private Task authendicate () {
-            return Task.Run (() => {
+        public ReactiveCommand<Unit, CommandResult> Authendicate { get; }
+        private Task<CommandResult> authendicate () {
+            return Task.Run<CommandResult> (() => {
+                Models.CommandResult result = new CommandResult (CommandResult.Results.Success, "Successfully logged in.");
                 try {
                     this.IsBusy = true;
                     this.Status = "Logging in...";
@@ -120,45 +122,58 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                     if (AuthendicateResponse1.IsSuccessful) {
                         Models.AuthResponse authResponse = JsonConvert.DeserializeObject<Models.AuthResponse> (AuthendicateResponse1.Content);
                         if (authResponse.message != "auth") {
-                            Console.Write ("Authendication Failed! ");
+                            Console.Write ("Authendication Phase 1 Failed! ");
+                            result.Result = CommandResult.Results.Failed;
+                            result.Message = "Login failed. ";
 
                             switch (authResponse.errorCode) {
                                 case "SWEB_9006":
                                     Console.WriteLine ("Server Busy!");
+                                    result.Message += "Server busy!";
                                     break;
                                 case "AUTH_9033":
                                     Console.WriteLine ("Password has expired!");
+                                    result.Message += "Password has expired!";
                                     break;
                                 case "AUTH_9033_MIG":
                                     Console.WriteLine ("Password has expired (Mirgration)!");
+                                    result.Message += "Password has expired (Migration)!";
                                     break;
                                 case "SWEB_9000":
                                 case "SWEB_9034":
                                     Console.WriteLine ("Invalid Captcha!");
+                                    result.Message += "Invalid captcha!";
                                     RefreshCaptcha.Execute ().Subscribe ();
                                     break;
                                 case "SWEB_9036":
                                     Console.WriteLine ("Invalid R0 user!");
+                                    result.Message += "Invalid user!";
                                     break;
                                 case "AUTH_9002":
                                     Console.WriteLine ("Invalid Username or Password!");
+                                    result.Message += "Invalid username or password!";
                                     RefreshCaptcha.Execute ().Subscribe ();
                                     break;
                                 case "SWEB_9014":
                                     Console.WriteLine ("System Error!");
+                                    result.Message += "System error!";
                                     break;
                                 case "SWEB_8000":
                                     Console.WriteLine ("Too Many (3) Wrong Attempts! Account Locked!");
+                                    result.Message += "Too many (3) wrong attempts! Account locked!";
                                     break;
                             }
-                            return;
                         } else {
-                            Console.WriteLine ("Authendication Phase 1 Failed!");
+                            Console.WriteLine ("Authendication Phase 1 Successful!");
                         }
                     } else {
                         Console.WriteLine ("Authendication Phase 1 Request Unsuccessful!");
-                        return;
+                        result.Result = CommandResult.Results.Failed;
+                        result.Message = "Login request failed! Unknown network error!";
                     }
+
+                    if (result.Result == CommandResult.Results.Failed)
+                        return result;
 
                     RestRequest AuthendicateRequest2 = new RestRequest (URLs.Auth, Method.GET);
                     AuthendicateRequest2.AddCookie ("Lang", "en");
@@ -167,17 +182,23 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                     RestResponse AuthendicateResponse2 = (RestResponse) Client.Execute (AuthendicateRequest2);
                     if (!AuthendicateResponse2.IsSuccessful) {
                         Console.WriteLine ("Authendication Phase 2 Request Unsucessful!");
-                        return;
+                        result.Result = CommandResult.Results.Failed;
+                        result.Message = "Login request failed! Unknown network error!";
                     }
 
-                    KeepAlive.Execute (URLs.WelcomeURL).Subscribe ();
+                    if (result.Result == CommandResult.Results.Failed)
+                        return result;
 
-                    Console.WriteLine("Authendication Success!");
+                    KeepAlive.Execute (URLs.WelcomeURL).Subscribe ();
                 } catch (Exception ex) {
                     Console.WriteLine ("Error on authendicating: " + ex.Message);
+                    result.Result = CommandResult.Results.Failed;
+                    result.Message = "Login failed! " + ex.Message;
                 } finally {
                     this.IsBusy = false;
                 }
+
+                return result;
             });
         }
 
