@@ -21,19 +21,29 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
         #region Variables
         private Random Random;
         private RestClient Client;
+
+        private string username = "";
+        private string password = "";
+
+        private Bitmap captchaImage = null;
+        private string captcha = "";
+        private string registeredName = "";
+        private string registeredGSTIN = "";
+        private bool isBusy = false;
+        private string status = "";
         #endregion
 
         #region Properties
-        public string Username { get; set; }
-        public string Password { get; set; }
-        public Bitmap CaptchaImage { get; set; }
-        public string Captcha { get; set; }
+        public string Username { get => username; set => this.RaiseAndSetIfChanged(ref username, value); }
+        public string Password { get => password; set => this.RaiseAndSetIfChanged(ref password, value); }
+        public Bitmap CaptchaImage { get => captchaImage; set => this.RaiseAndSetIfChanged(ref captchaImage, value); }
+        public string Captcha { get => captcha; set => this.RaiseAndSetIfChanged(ref captcha, value); }
 
-        public string RegisteredName { get; }
-        public string RegisteredGSTIN { get; }
+        public string RegisteredName { get => registeredName; }
+        public string RegisteredGSTIN { get => registeredGSTIN; }
 
-        public bool IsBusy { get; set; }
-        public string Status { get; set; }
+        public bool IsBusy { get => isBusy; set => this.RaiseAndSetIfChanged(ref isBusy, value); }
+        public string Status { get => status; set => this.RaiseAndSetIfChanged(ref status, value); }
         #endregion
 
         #region Commands
