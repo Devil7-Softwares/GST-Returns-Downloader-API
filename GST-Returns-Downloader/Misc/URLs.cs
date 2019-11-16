@@ -11,6 +11,7 @@ namespace Devil7.Automation.GSTR.Downloader.Misc {
 
         #region Nodes
         public const string Login = "/services/login";
+        public const string Captcha = "/services/captcha";
         #endregion
     }
 }

@@ -15,6 +15,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
             this.Random = new Random ();
 
             this.InitializeAPI = ReactiveCommand.CreateFromTask (initializeAPI);
+            this.RefreshCaptcha = ReactiveCommand.CreateFromTask (refreshCaptcha);
         }
         #endregion
 
@@ -34,16 +35,16 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
         #endregion
 
         #region Properties
-        public string Username { get => username; set => this.RaiseAndSetIfChanged(ref username, value); }
-        public string Password { get => password; set => this.RaiseAndSetIfChanged(ref password, value); }
-        public Bitmap CaptchaImage { get => captchaImage; set => this.RaiseAndSetIfChanged(ref captchaImage, value); }
-        public string Captcha { get => captcha; set => this.RaiseAndSetIfChanged(ref captcha, value); }
+        public string Username { get => username; set => this.RaiseAndSetIfChanged (ref username, value); }
+        public string Password { get => password; set => this.RaiseAndSetIfChanged (ref password, value); }
+        public Bitmap CaptchaImage { get => captchaImage; set => this.RaiseAndSetIfChanged (ref captchaImage, value); }
+        public string Captcha { get => captcha; set => this.RaiseAndSetIfChanged (ref captcha, value); }
 
         public string RegisteredName { get => registeredName; }
         public string RegisteredGSTIN { get => registeredGSTIN; }
 
-        public bool IsBusy { get => isBusy; set => this.RaiseAndSetIfChanged(ref isBusy, value); }
-        public string Status { get => status; set => this.RaiseAndSetIfChanged(ref status, value); }
+        public bool IsBusy { get => isBusy; set => this.RaiseAndSetIfChanged (ref isBusy, value); }
+        public string Status { get => status; set => this.RaiseAndSetIfChanged (ref status, value); }
         #endregion
 
         #region Commands
@@ -63,6 +64,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                     RestResponse InitialResponse = (RestResponse) Client.Execute (InitialRequest);
                     if (InitialResponse.IsSuccessful) {
                         Console.WriteLine ("Initialization successful!");
+                        this.RefreshCaptcha.Execute ().Subscribe ();
                     } else {
                         Console.WriteLine (InitialResponse.ErrorMessage);
                     }
@@ -72,6 +74,40 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                     this.IsBusy = false;
                 }
             });
+        }
+
+        public ReactiveCommand<Unit, Unit> RefreshCaptcha { get; }
+        private Task refreshCaptcha () {
+            return Task.Run (() => {
+                this.IsBusy = true;
+                this.Status = "Loading Captcha...";
+
+                try {
+                    UpdateURL (URLs.ServicesURL);
+
+                    RestRequest CaptchaRequest = new RestRequest (URLs.Captcha, Method.GET);
+                    CaptchaRequest.AddParameter ("rnd", Random.NextDouble ());
+                    RestResponse CaptchaResponse = (RestResponse) Client.Execute (CaptchaRequest);
+                    if (CaptchaResponse.IsSuccessful) {
+                        this.CaptchaImage = new Bitmap (new System.IO.MemoryStream (CaptchaResponse.RawBytes));
+                        Console.WriteLine ("Captcha Request Successful!");
+                    } else {
+                        Console.WriteLine (CaptchaResponse.ErrorMessage);
+                    }
+                } catch (Exception ex) {
+                    Console.WriteLine ("Error on refreshing captcha: " + ex.Message);
+                } finally {
+                    this.IsBusy = false;
+                }
+            });
+        }
+        #endregion
+
+        #region "MiscMethods"
+        private void UpdateURL (string url) {
+            if (this.Client != null && (this.Client.BaseUrl == null || this.Client.BaseUrl.ToString () != url)) {
+                this.Client.BaseUrl = new Uri (url);
+            }
         }
         #endregion
     }
