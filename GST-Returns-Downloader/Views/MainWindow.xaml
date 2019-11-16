@@ -49,7 +49,7 @@
                 <TextBox Grid.Row="2" Grid.Column="0" Watermark="Enter Text in Above Image" Text="{Binding Captcha}"/>
             </Grid>
         </Border><!--Captcha-->
-        <Button Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right" Width="100" Margin="5">Login</Button>
+        <Button Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right" Width="100" Margin="5" Command="{Binding Authendicate}">Login</Button>
         <Border Grid.Row="3" Grid.Column="0" BorderThickness="1" BorderBrush="Black" CornerRadius="2" Margin="5"><!--Captcha-->
             <Grid>
                 <Grid.RowDefinitions>

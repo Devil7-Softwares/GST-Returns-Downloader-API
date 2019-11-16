@@ -12,6 +12,14 @@ namespace Devil7.Automation.GSTR.Downloader.Misc {
         #region Nodes
         public const string Login = "/services/login";
         public const string Captcha = "/services/captcha";
+        public const string Authendicate = "/services/authenticate";
+        public const string Auth = "/services/auth/";
+        public const string KeepAlive = "/{0}/auth/api/keepalive";
+        #endregion
+
+        #region FullURLs
+        public const string WelcomeURL = "https://services.gst.gov.in/services/auth/fowelcome";
+        public const string LoginURL = "https://services.gst.gov.in/services/login";
         #endregion
     }
 }
