@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Devil7.Automation.GSTR.Downloader.Misc;
+using Devil7.Automation.GSTR.Downloader.Models;
 
 namespace Devil7.Automation.GSTR.Downloader.Views {
     public class MainWindow : Window {
@@ -27,7 +28,13 @@ namespace Devil7.Automation.GSTR.Downloader.Views {
         private void Window_Opened (object sender, EventArgs e) {
             this.ViewModel.InitializeAPI.Execute ().Subscribe ();
 
-            this.ViewModel.Authendicate.Subscribe (result => { MessageBoxHelper.Show (result); });
+            this.ViewModel.InitializeAPI.Subscribe (result => {
+                if (result.Result == CommandResult.Results.Failed) {
+                    MessageBoxHelper.ShowError (result.Message, "Error", this).RunSynchronously();
+                    Environment.Exit(-1);
+                }
+            });
+            this.ViewModel.Authendicate.Subscribe (result => { MessageBoxHelper.Show (result, this); });
         }
         #endregion
     }
