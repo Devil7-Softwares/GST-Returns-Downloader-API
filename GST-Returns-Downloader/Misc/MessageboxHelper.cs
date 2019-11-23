@@ -17,7 +17,25 @@ namespace Devil7.Automation.GSTR.Downloader.Misc {
                 Button = ButtonEnum.Ok,
                     ContentTitle = (result.Result == CommandResult.Results.Success ? "Done" : "Failed"),
                     ContentMessage = result.Message,
-                    Icon = (result.Result == CommandResult.Results.Success ? Icon.Success : Icon.Stop),
+                    Icon = (result.Result == CommandResult.Results.Success ? Icon.Success : Icon.Error),
+                    Style = Style.None
+            });
+            if (parent != null)
+            {
+                return window.ShowDialog (parent);
+            }
+            else
+            {
+                return window.Show ();
+            }
+        }
+
+        public static Task ShowError(string message, string title, Window parent = null){
+            var window = new MessageBoxWindow (new MessageBoxParams {
+                Button = ButtonEnum.Ok,
+                    ContentTitle = title,
+                    ContentMessage = message,
+                    Icon = Icon.Error,
                     Style = Style.None
             });
             if (parent != null)
