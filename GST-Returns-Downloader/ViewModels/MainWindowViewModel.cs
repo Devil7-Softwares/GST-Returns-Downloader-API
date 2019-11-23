@@ -266,9 +266,9 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
 
                     UpdateURL (URLs.ReturnsURL);
 
-                    RestRequest GetMonthsRequest = new RestRequest ("/returns/auth/api/dropdown", Method.GET);
+                    RestRequest GetMonthsRequest = new RestRequest (URLs.Months, Method.GET);
                     GetMonthsRequest.AddCookie ("Lang", "en");
-                    GetMonthsRequest.AddHeader ("Referer", "https://return.gst.gov.in/returns/auth/dashboard");
+                    GetMonthsRequest.AddHeader ("Referer", URLs.DashboardURL);
                     RestResponse GetMonthsResponse = (RestResponse) this.Client.Execute (GetMonthsRequest);
                     if (GetMonthsResponse.IsSuccessful) {
                         MonthsResponseData monthsData = JsonConvert.DeserializeObject<MonthsResponseData> (GetMonthsResponse.Content);

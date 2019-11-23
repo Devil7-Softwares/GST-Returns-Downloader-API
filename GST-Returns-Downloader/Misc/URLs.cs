@@ -15,6 +15,7 @@ namespace Devil7.Automation.GSTR.Downloader.Misc {
         public const string Authendicate = "/services/authenticate";
         public const string Auth = "/services/auth/";
         public const string KeepAlive = "/{0}/auth/api/keepalive";
+        public const string Months = "/returns/auth/api/dropdown";
         public const string UserStatus = "/services/api/ustatus";
         #endregion
 
