@@ -40,6 +40,12 @@ namespace Devil7.Automation.GSTR.Downloader.Views {
             });
             this.ViewModel.GetMonths.Subscribe (async result => {
                 await MessageBoxHelper.ShowError (result, this);
+                if (result.Result == CommandResult.Results.Success) {
+                    await this.ViewModel.GetUserStatus.Execute ();
+                }
+            });
+            this.ViewModel.GetUserStatus.Subscribe(async result => {
+                await MessageBoxHelper.ShowError(result, this);
             });
         }
         #endregion

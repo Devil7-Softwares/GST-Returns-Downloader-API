@@ -22,6 +22,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
             this.Authendicate = ReactiveCommand.CreateFromTask<CommandResult> (authendicate);
             this.KeepAlive = ReactiveCommand.CreateFromTask<string> (keepAlive);
             this.GetMonths = ReactiveCommand.CreateFromTask<CommandResult> (getMonths);
+            this.GetUserStatus = ReactiveCommand.CreateFromTask<CommandResult> (getUserStatus);
         }
         #endregion
 
@@ -47,8 +48,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
         public Bitmap CaptchaImage { get => captchaImage; set => this.RaiseAndSetIfChanged (ref captchaImage, value); }
         public string Captcha { get => captcha; set => this.RaiseAndSetIfChanged (ref captcha, value); }
 
-        public string RegisteredName { get => registeredName; }
-        public string RegisteredGSTIN { get => registeredGSTIN; }
+        public string RegisteredName { get => registeredName; set => this.RaiseAndSetIfChanged (ref registeredName, value); }
+        public string RegisteredGSTIN { get => registeredGSTIN;  set => this.RaiseAndSetIfChanged (ref registeredGSTIN, value); }
 
         public bool IsBusy { get => isBusy; set => this.RaiseAndSetIfChanged (ref isBusy, value); }
         public string Status { get => status; set => this.RaiseAndSetIfChanged (ref status, value); }
@@ -274,10 +275,10 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                         if (monthsData.status == 1) {
                             ObservableCollection<YearData> ReturnPeriods = new ObservableCollection<YearData> ();
                             foreach (Year year in monthsData.data.Years) {
-                                ReturnPeriods.Add(new YearData(year));
+                                ReturnPeriods.Add (new YearData (year));
                             }
                             this.ReturnPeriods = ReturnPeriods;
-                            Console.WriteLine("Get Months Successful.");
+                            Console.WriteLine ("Get Months Successful.");
                         } else {
                             result.Result = CommandResult.Results.Failed;
                             result.Message = "Get Months Request Status Failed!";
@@ -293,6 +294,43 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                 } finally {
                     this.IsBusy = false;
                 }
+                return result;
+            });
+        }
+
+        public ReactiveCommand<Unit, CommandResult> GetUserStatus { get; }
+        private Task<CommandResult> getUserStatus () {
+            return Task.Run<CommandResult> (() => {
+                CommandResult result = new CommandResult (CommandResult.Results.Success, "Get UserStatus Successful.");
+
+                try {
+                    this.isBusy = true;
+                    this.Status = "Fetching User Status...";
+
+                    UpdateURL (URLs.ReturnsURL);
+
+                    RestRequest request = new RestRequest (URLs.UserStatus, Method.GET);
+                    request.AddHeader ("Referer", URLs.DashboardURL);
+                    RestResponse response = (RestResponse) Client.Execute (request);
+                    if (response.IsSuccessful) {
+                        UserStatus userStatus = JsonConvert.DeserializeObject<UserStatus> (response.Content);
+                        this.RegisteredGSTIN = userStatus.gstin;
+                        this.RegisteredName = userStatus.bname;
+                    } else {
+                        string errorMessage = "Get UserStatus Request Failed!";
+                        Console.WriteLine (errorMessage);
+                        result.Message = errorMessage;
+                        result.Result = CommandResult.Results.Failed;
+                    }
+                } catch (Exception ex) {
+                    string errorMessage = "Get UserStatus Failed!" + ex.Message;
+                    Console.WriteLine (errorMessage);
+                    result.Message = errorMessage;
+                    result.Result = CommandResult.Results.Failed;
+                } finally {
+                    this.isBusy = false;
+                }
+
                 return result;
             });
         }
