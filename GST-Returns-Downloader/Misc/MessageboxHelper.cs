@@ -20,31 +20,29 @@ namespace Devil7.Automation.GSTR.Downloader.Misc {
                     Icon = (result.Result == CommandResult.Results.Success ? Icon.Success : Icon.Error),
                     Style = Style.None
             });
-            if (parent != null)
-            {
+            if (parent != null) {
                 return window.ShowDialog (parent);
-            }
-            else
-            {
+            } else {
                 return window.Show ();
             }
         }
 
-        public static Task ShowError(string message, string title, Window parent = null){
-            var window = new MessageBoxWindow (new MessageBoxParams {
-                Button = ButtonEnum.Ok,
-                    ContentTitle = title,
-                    ContentMessage = message,
-                    Icon = Icon.Error,
-                    Style = Style.None
-            });
-            if (parent != null)
-            {
-                return window.ShowDialog (parent);
-            }
-            else
-            {
-                return window.Show ();
+        public static Task ShowError (CommandResult result, Window parent = null) {
+            if (result.Result == CommandResult.Results.Failed) {
+                var window = new MessageBoxWindow (new MessageBoxParams {
+                    Button = ButtonEnum.Ok,
+                        ContentTitle = "Error",
+                        ContentMessage = result.Message,
+                        Icon = Icon.Error,
+                        Style = Style.None
+                });
+                if (parent != null) {
+                    return window.ShowDialog (parent);
+                } else {
+                    return window.Show ();
+                }
+            } else {
+                return Task.FromResult(false);
             }
         }
     }

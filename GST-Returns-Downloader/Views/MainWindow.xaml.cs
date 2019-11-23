@@ -28,17 +28,18 @@ namespace Devil7.Automation.GSTR.Downloader.Views {
         private void Window_Opened (object sender, EventArgs e) {
             this.ViewModel.InitializeAPI.Execute ().Subscribe ();
 
-            this.ViewModel.InitializeAPI.Subscribe (result => {
-                if (result.Result == CommandResult.Results.Failed) {
-                    MessageBoxHelper.ShowError (result.Message, "Error", this).RunSynchronously ();
-                    Environment.Exit (-1);
-                }
+            this.ViewModel.InitializeAPI.Subscribe (async result => {
+                await MessageBoxHelper.ShowError (result, this);
+                if (result.Result == CommandResult.Results.Failed) Environment.Exit (-1);
             });
             this.ViewModel.Authendicate.Subscribe (async result => {
                 await MessageBoxHelper.Show (result, this);
                 if (result.Result == CommandResult.Results.Success) {
                     await this.ViewModel.GetMonths.Execute ();
                 }
+            });
+            this.ViewModel.GetMonths.Subscribe (async result => {
+                await MessageBoxHelper.ShowError (result, this);
             });
         }
         #endregion
