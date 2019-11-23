@@ -40,6 +40,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
         private bool isBusy = false;
         private string status = "";
         private ObservableCollection<YearData> returnPeriods;
+        private bool cancelable = false;
         #endregion
 
         #region Properties
@@ -55,9 +56,11 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
         public string Status { get => status; set => this.RaiseAndSetIfChanged (ref status, value); }
 
         public ObservableCollection<YearData> ReturnPeriods { get => returnPeriods; set => this.RaiseAndSetIfChanged (ref returnPeriods, value); }
+        public bool Cancelable { get => cancelable; set => this.RaiseAndSetIfChanged(ref cancelable, value); }
         #endregion
 
         #region Commands
+        public ReactiveCommand<Unit, Unit> Cancel;
         public ReactiveCommand<Unit, CommandResult> InitializeAPI { get; }
         private Task<CommandResult> initializeAPI () {
             return Task.Run<CommandResult> (() => {
@@ -65,6 +68,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
 
                 this.IsBusy = true;
                 this.Status = "Initializing API...";
+                this.Cancelable = false;
 
                 try {
                     this.Random = new Random ();
@@ -101,6 +105,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
 
                 this.IsBusy = true;
                 this.Status = "Loading Captcha...";
+                this.Cancelable = false;
 
                 try {
                     UpdateURL (URLs.ServicesURL);
@@ -135,6 +140,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                 try {
                     this.IsBusy = true;
                     this.Status = "Logging in...";
+                    this.Cancelable = false;
 
                     UpdateURL (URLs.ServicesURL);
 
@@ -263,6 +269,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                 try {
                     this.IsBusy = true;
                     this.Status = "Fetching Available Months...";
+                    this.Cancelable = false;
 
                     UpdateURL (URLs.ReturnsURL);
 
@@ -306,6 +313,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                 try {
                     this.isBusy = true;
                     this.Status = "Fetching User Status...";
+                    this.Cancelable = false;
 
                     UpdateURL (URLs.ReturnsURL);
 
