@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,6 +21,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
             this.RefreshCaptcha = ReactiveCommand.CreateFromTask<CommandResult> (refreshCaptcha);
             this.Authendicate = ReactiveCommand.CreateFromTask<CommandResult> (authendicate);
             this.KeepAlive = ReactiveCommand.CreateFromTask<string> (keepAlive);
+            this.GetMonths = ReactiveCommand.CreateFromTask<CommandResult> (getMonths);
         }
         #endregion
 
@@ -36,6 +38,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
         private string registeredGSTIN = "";
         private bool isBusy = false;
         private string status = "";
+        private ObservableCollection<YearData> returnPeriods;
         #endregion
 
         #region Properties
@@ -49,6 +52,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
 
         public bool IsBusy { get => isBusy; set => this.RaiseAndSetIfChanged (ref isBusy, value); }
         public string Status { get => status; set => this.RaiseAndSetIfChanged (ref status, value); }
+
+        public ObservableCollection<YearData> ReturnPeriods { get => returnPeriods; set => this.RaiseAndSetIfChanged (ref returnPeriods, value); }
         #endregion
 
         #region Commands
@@ -247,6 +252,48 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                 } catch (Exception ex) {
                     Console.WriteLine ("Error on keep alive request: " + ex.Message);
                 }
+            });
+        }
+
+        public ReactiveCommand<Unit, CommandResult> GetMonths { get; }
+        private Task<CommandResult> getMonths () {
+            return Task.Run<CommandResult> (() => {
+                CommandResult result = new CommandResult (CommandResult.Results.Success, "Months Fetched Successfully!");
+                try {
+                    this.IsBusy = true;
+                    this.Status = "Fetching Available Months...";
+
+                    UpdateURL (URLs.ReturnsURL);
+
+                    RestRequest GetMonthsRequest = new RestRequest ("/returns/auth/api/dropdown", Method.GET);
+                    GetMonthsRequest.AddCookie ("Lang", "en");
+                    GetMonthsRequest.AddHeader ("Referer", "https://return.gst.gov.in/returns/auth/dashboard");
+                    RestResponse GetMonthsResponse = (RestResponse) this.Client.Execute (GetMonthsRequest);
+                    if (GetMonthsResponse.IsSuccessful) {
+                        MonthsResponseData monthsData = JsonConvert.DeserializeObject<MonthsResponseData> (GetMonthsResponse.Content);
+                        if (monthsData.status == 1) {
+                            ObservableCollection<YearData> ReturnPeriods = new ObservableCollection<YearData> ();
+                            foreach (Year year in monthsData.data.Years) {
+                                ReturnPeriods.Add(new YearData(year));
+                            }
+                            this.ReturnPeriods = ReturnPeriods;
+                            Console.WriteLine("Get Months Successful.");
+                        } else {
+                            result.Result = CommandResult.Results.Failed;
+                            result.Message = "Get Months Request Status Failed!";
+                        }
+                    } else {
+                        result.Result = CommandResult.Results.Failed;
+                        result.Message = "Get Months Request Failed!";
+                    }
+                } catch (Exception ex) {
+                    Console.WriteLine ("Get Months Failed. " + ex.Message);
+                    result.Message = "Get Months Failed." + ex.Message;
+                    result.Result = CommandResult.Results.Failed;
+                } finally {
+                    this.IsBusy = false;
+                }
+                return result;
             });
         }
         #endregion

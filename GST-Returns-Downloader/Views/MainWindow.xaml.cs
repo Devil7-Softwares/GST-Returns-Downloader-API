@@ -30,11 +30,16 @@ namespace Devil7.Automation.GSTR.Downloader.Views {
 
             this.ViewModel.InitializeAPI.Subscribe (result => {
                 if (result.Result == CommandResult.Results.Failed) {
-                    MessageBoxHelper.ShowError (result.Message, "Error", this).RunSynchronously();
-                    Environment.Exit(-1);
+                    MessageBoxHelper.ShowError (result.Message, "Error", this).RunSynchronously ();
+                    Environment.Exit (-1);
                 }
             });
-            this.ViewModel.Authendicate.Subscribe (result => { MessageBoxHelper.Show (result, this); });
+            this.ViewModel.Authendicate.Subscribe (async result => {
+                await MessageBoxHelper.Show (result, this);
+                if (result.Result == CommandResult.Results.Success) {
+                    await this.ViewModel.GetMonths.Execute ();
+                }
+            });
         }
         #endregion
     }
