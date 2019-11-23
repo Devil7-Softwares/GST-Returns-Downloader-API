@@ -16,8 +16,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
         public MainWindowViewModel () {
             this.Random = new Random ();
 
-            this.InitializeAPI = ReactiveCommand.CreateFromTask (initializeAPI);
-            this.RefreshCaptcha = ReactiveCommand.CreateFromTask (refreshCaptcha);
+            this.InitializeAPI = ReactiveCommand.CreateFromTask<CommandResult> (initializeAPI);
+            this.RefreshCaptcha = ReactiveCommand.CreateFromTask<CommandResult> (refreshCaptcha);
             this.Authendicate = ReactiveCommand.CreateFromTask<CommandResult> (authendicate);
             this.KeepAlive = ReactiveCommand.CreateFromTask<string> (keepAlive);
         }
@@ -52,9 +52,11 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
         #endregion
 
         #region Commands
-        public ReactiveCommand<Unit, Unit> InitializeAPI { get; }
-        private Task initializeAPI () {
-            return Task.Run (() => {
+        public ReactiveCommand<Unit, CommandResult> InitializeAPI { get; }
+        private Task<CommandResult> initializeAPI () {
+            return Task.Run<CommandResult> (() => {
+                Models.CommandResult result = new CommandResult (CommandResult.Results.Success, "Successfully initialized API.");
+
                 this.IsBusy = true;
                 this.Status = "Initializing API...";
 
@@ -71,18 +73,26 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                         this.RefreshCaptcha.Execute ().Subscribe ();
                     } else {
                         Console.WriteLine (InitialResponse.ErrorMessage);
+                        result.Result = CommandResult.Results.Failed;
+                        result.Message = "Unable to initialize API. " + InitialResponse.ErrorMessage;
                     }
                 } catch (Exception ex) {
                     Console.WriteLine ("Error on initializing API: " + ex.Message);
+                    result.Result = CommandResult.Results.Failed;
+                    result.Message = "Unable to initialize API. " + ex.Message;
                 } finally {
                     this.IsBusy = false;
                 }
+
+                return result;
             });
         }
 
-        public ReactiveCommand<Unit, Unit> RefreshCaptcha { get; }
-        private Task refreshCaptcha () {
-            return Task.Run (() => {
+        public ReactiveCommand<Unit, CommandResult> RefreshCaptcha { get; }
+        private Task<CommandResult> refreshCaptcha () {
+            return Task.Run<CommandResult> (() => {
+                Models.CommandResult result = new CommandResult (CommandResult.Results.Success, "Successfully loaded/refreshed captcha.");
+
                 this.IsBusy = true;
                 this.Status = "Loading Captcha...";
 
@@ -97,12 +107,18 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                         Console.WriteLine ("Captcha Request Successful!");
                     } else {
                         Console.WriteLine (CaptchaResponse.ErrorMessage);
+                        result.Result = CommandResult.Results.Failed;
+                        result.Message = "Captcha failed to load! " + CaptchaResponse.ErrorMessage;
                     }
                 } catch (Exception ex) {
                     Console.WriteLine ("Error on refreshing captcha: " + ex.Message);
+                    result.Result = CommandResult.Results.Failed;
+                    result.Message = "Captcha failed to load! " + ex.Message;
                 } finally {
                     this.IsBusy = false;
                 }
+
+                return result;
             });
         }
 
