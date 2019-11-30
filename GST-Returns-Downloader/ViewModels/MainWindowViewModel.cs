@@ -12,17 +12,17 @@ using ReactiveUI;
 using RestSharp;
 
 namespace Devil7.Automation.GSTR.Downloader.ViewModels {
-    public class MainWindowViewModel : ViewModelBase {
+    public class MainWindowViewModel: ViewModelBase { 
         #region Consturctor
-        public MainWindowViewModel () {
-            this.Random = new Random ();
+        public MainWindowViewModel() {
+            this.Random = new Random();
 
-            this.InitializeAPI = ReactiveCommand.CreateFromTask<CommandResult> (initializeAPI);
-            this.RefreshCaptcha = ReactiveCommand.CreateFromTask<CommandResult> (refreshCaptcha);
-            this.Authendicate = ReactiveCommand.CreateFromTask<CommandResult> (authendicate);
-            this.KeepAlive = ReactiveCommand.CreateFromTask<string> (keepAlive);
-            this.GetMonths = ReactiveCommand.CreateFromTask<CommandResult> (getMonths);
-            this.GetUserStatus = ReactiveCommand.CreateFromTask<CommandResult> (getUserStatus);
+            this.InitializeAPI = ReactiveCommand.CreateFromTask<CommandResult>(initializeAPI);
+            this.RefreshCaptcha = ReactiveCommand.CreateFromTask<CommandResult>(refreshCaptcha);
+            this.Authendicate = ReactiveCommand.CreateFromTask<CommandResult>(authendicate);
+            this.KeepAlive = ReactiveCommand.CreateFromTask<string>(keepAlive);
+            this.GetMonths = ReactiveCommand.CreateFromTask<CommandResult>(getMonths);
+            this.GetUserStatus = ReactiveCommand.CreateFromTask<CommandResult>(getUserStatus);
         }
         #endregion
 
@@ -41,53 +41,90 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
         private string status = "";
         private ObservableCollection<YearData> returnPeriods;
         private bool cancelable = false;
+        private ObservableCollection<ReturnsData> returnsDatas;
         #endregion
 
         #region Properties
-        public string Username { get => username; set => this.RaiseAndSetIfChanged (ref username, value); }
-        public string Password { get => password; set => this.RaiseAndSetIfChanged (ref password, value); }
-        public Bitmap CaptchaImage { get => captchaImage; set => this.RaiseAndSetIfChanged (ref captchaImage, value); }
-        public string Captcha { get => captcha; set => this.RaiseAndSetIfChanged (ref captcha, value); }
+        public string Username {
+            get => username;
+            set => this.RaiseAndSetIfChanged(ref username, value);
+        }
+        public string Password {
+            get => password;
+            set => this.RaiseAndSetIfChanged(ref password, value);
+        }
+        public Bitmap CaptchaImage {
+            get => captchaImage;
+            set => this.RaiseAndSetIfChanged(ref captchaImage, value);
+        }
+        public string Captcha {
+            get => captcha;
+            set => this.RaiseAndSetIfChanged(ref captcha, value);
+        }
 
-        public string RegisteredName { get => registeredName; set => this.RaiseAndSetIfChanged (ref registeredName, value); }
-        public string RegisteredGSTIN { get => registeredGSTIN;  set => this.RaiseAndSetIfChanged (ref registeredGSTIN, value); }
+        public string RegisteredName {
+            get => registeredName;
+            set => this.RaiseAndSetIfChanged(ref registeredName, value);
+        }
+        public string RegisteredGSTIN {
+            get => registeredGSTIN;
+            set => this.RaiseAndSetIfChanged(ref registeredGSTIN, value);
+        }
 
-        public bool IsBusy { get => isBusy; set => this.RaiseAndSetIfChanged (ref isBusy, value); }
-        public string Status { get => status; set => this.RaiseAndSetIfChanged (ref status, value); }
+        public bool IsBusy {
+            get => isBusy;
+            set => this.RaiseAndSetIfChanged(ref isBusy, value);
+        }
+        public string Status {
+            get => status;
+            set => this.RaiseAndSetIfChanged(ref status, value);
+        }
 
-        public ObservableCollection<YearData> ReturnPeriods { get => returnPeriods; set => this.RaiseAndSetIfChanged (ref returnPeriods, value); }
-        public bool Cancelable { get => cancelable; set => this.RaiseAndSetIfChanged(ref cancelable, value); }
+        public ObservableCollection<YearData> ReturnPeriods {
+            get => returnPeriods;
+            set => this.RaiseAndSetIfChanged(ref returnPeriods, value);
+        }
+        public bool Cancelable {
+            get => cancelable;
+            set => this.RaiseAndSetIfChanged(ref cancelable, value);
+        }
+        public ObservableCollection<ReturnsData> ReturnsDatas {
+            get => returnsDatas;
+            set => this.RaiseAndSetIfChanged(ref returnsDatas, value);
+        }
         #endregion
 
         #region Commands
         public ReactiveCommand<Unit, Unit> Cancel;
-        public ReactiveCommand<Unit, CommandResult> InitializeAPI { get; }
-        private Task<CommandResult> initializeAPI () {
-            return Task.Run<CommandResult> (() => {
-                Models.CommandResult result = new CommandResult (CommandResult.Results.Success, "Successfully initialized API.");
+        public ReactiveCommand<Unit, CommandResult> InitializeAPI {
+            get;
+        }
+        private Task<CommandResult> initializeAPI() {
+            return Task.Run<CommandResult>(() => {
+                Models.CommandResult result = new CommandResult(CommandResult.Results.Success, "Successfully initialized API.");
 
                 this.IsBusy = true;
                 this.Status = "Initializing API...";
                 this.Cancelable = false;
 
                 try {
-                    this.Random = new Random ();
-                    this.Client = new RestClient (URLs.ServicesURL);
-                    this.Client.CookieContainer = new System.Net.CookieContainer ();
+                    this.Random = new Random();
+                    this.Client = new RestClient(URLs.ServicesURL);
+                    this.Client.CookieContainer = new System.Net.CookieContainer();
                     this.Client.UserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36";
 
-                    RestRequest InitialRequest = new RestRequest (URLs.Login, Method.GET);
-                    RestResponse InitialResponse = (RestResponse) Client.Execute (InitialRequest);
+                    RestRequest InitialRequest = new RestRequest(URLs.Login, Method.GET);
+                    RestResponse InitialResponse = (RestResponse)Client.Execute(InitialRequest);
                     if (InitialResponse.IsSuccessful) {
-                        Console.WriteLine ("Initialization successful!");
-                        this.RefreshCaptcha.Execute ().Subscribe ();
+                        Console.WriteLine("Initialization successful!");
+                        this.RefreshCaptcha.Execute().Subscribe();
                     } else {
-                        Console.WriteLine (InitialResponse.ErrorMessage);
+                        Console.WriteLine(InitialResponse.ErrorMessage);
                         result.Result = CommandResult.Results.Failed;
                         result.Message = "Unable to initialize API. " + InitialResponse.ErrorMessage;
                     }
                 } catch (Exception ex) {
-                    Console.WriteLine ("Error on initializing API: " + ex.Message);
+                    Console.WriteLine("Error on initializing API: " + ex.Message);
                     result.Result = CommandResult.Results.Failed;
                     result.Message = "Unable to initialize API. " + ex.Message;
                 } finally {
@@ -98,31 +135,33 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
             });
         }
 
-        public ReactiveCommand<Unit, CommandResult> RefreshCaptcha { get; }
-        private Task<CommandResult> refreshCaptcha () {
-            return Task.Run<CommandResult> (() => {
-                Models.CommandResult result = new CommandResult (CommandResult.Results.Success, "Successfully loaded/refreshed captcha.");
+        public ReactiveCommand<Unit, CommandResult> RefreshCaptcha {
+            get;
+        }
+        private Task<CommandResult> refreshCaptcha() {
+            return Task.Run<CommandResult>(() => {
+                Models.CommandResult result = new CommandResult(CommandResult.Results.Success, "Successfully loaded/refreshed captcha.");
 
                 this.IsBusy = true;
                 this.Status = "Loading Captcha...";
                 this.Cancelable = false;
 
                 try {
-                    UpdateURL (URLs.ServicesURL);
+                    UpdateURL(URLs.ServicesURL);
 
-                    RestRequest CaptchaRequest = new RestRequest (URLs.Captcha, Method.GET);
-                    CaptchaRequest.AddParameter ("rnd", Random.NextDouble ());
-                    RestResponse CaptchaResponse = (RestResponse) Client.Execute (CaptchaRequest);
+                    RestRequest CaptchaRequest = new RestRequest(URLs.Captcha, Method.GET);
+                    CaptchaRequest.AddParameter("rnd", Random.NextDouble());
+                    RestResponse CaptchaResponse = (RestResponse)Client.Execute(CaptchaRequest);
                     if (CaptchaResponse.IsSuccessful) {
-                        this.CaptchaImage = new Bitmap (new System.IO.MemoryStream (CaptchaResponse.RawBytes));
-                        Console.WriteLine ("Captcha Request Successful!");
+                        this.CaptchaImage = new Bitmap(new System.IO.MemoryStream(CaptchaResponse.RawBytes));
+                        Console.WriteLine("Captcha Request Successful!");
                     } else {
-                        Console.WriteLine (CaptchaResponse.ErrorMessage);
+                        Console.WriteLine(CaptchaResponse.ErrorMessage);
                         result.Result = CommandResult.Results.Failed;
                         result.Message = "Captcha failed to load! " + CaptchaResponse.ErrorMessage;
                     }
                 } catch (Exception ex) {
-                    Console.WriteLine ("Error on refreshing captcha: " + ex.Message);
+                    Console.WriteLine("Error on refreshing captcha: " + ex.Message);
                     result.Result = CommandResult.Results.Failed;
                     result.Message = "Captcha failed to load! " + ex.Message;
                 } finally {
@@ -133,93 +172,99 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
             });
         }
 
-        public ReactiveCommand<Unit, CommandResult> Authendicate { get; }
-        private Task<CommandResult> authendicate () {
-            return Task.Run<CommandResult> (() => {
-                Models.CommandResult result = new CommandResult (CommandResult.Results.Success, "Successfully logged in.");
+        public ReactiveCommand<Unit, CommandResult> Authendicate {
+            get;
+        }
+        private Task<CommandResult> authendicate() {
+            return Task.Run<CommandResult>(() => {
+                Models.CommandResult result = new CommandResult(CommandResult.Results.Success, "Successfully logged in.");
                 try {
                     this.IsBusy = true;
                     this.Status = "Logging in...";
                     this.Cancelable = false;
 
-                    UpdateURL (URLs.ServicesURL);
+                    UpdateURL(URLs.ServicesURL);
 
-                    RestRequest AuthendicateRequest1 = new RestRequest (URLs.Authendicate, Method.POST);
-                    AuthendicateRequest1.AddJsonBody (new Misc.AuthenticationData (this.Username, this.Password, this.Captcha));
-                    RestResponse AuthendicateResponse1 = (RestResponse) Client.Execute (AuthendicateRequest1);
+                    RestRequest AuthendicateRequest1 = new RestRequest(URLs.Authendicate, Method.POST);
+                    AuthendicateRequest1.AddJsonBody(new Misc.AuthenticationData(this.Username, this.Password, this.Captcha));
+                    RestResponse AuthendicateResponse1 = (RestResponse)Client.Execute(AuthendicateRequest1);
                     if (AuthendicateResponse1.IsSuccessful) {
-                        Models.AuthResponse authResponse = JsonConvert.DeserializeObject<Models.AuthResponse> (AuthendicateResponse1.Content);
+                        Models.AuthResponse authResponse = JsonConvert.DeserializeObject < Models.AuthResponse > (AuthendicateResponse1.Content);
                         if (authResponse.message != "auth") {
-                            Console.Write ("Authendication Phase 1 Failed! ");
+                            Console.Write("Authendication Phase 1 Failed! ");
                             result.Result = CommandResult.Results.Failed;
                             result.Message = "Login failed. ";
 
                             switch (authResponse.errorCode) {
                                 case "SWEB_9006":
-                                    Console.WriteLine ("Server Busy!");
+                                    Console.WriteLine("Server Busy!");
                                     result.Message += "Server busy!";
                                     break;
                                 case "AUTH_9033":
-                                    Console.WriteLine ("Password has expired!");
+                                    Console.WriteLine("Password has expired!");
                                     result.Message += "Password has expired!";
                                     break;
                                 case "AUTH_9033_MIG":
-                                    Console.WriteLine ("Password has expired (Mirgration)!");
+                                    Console.WriteLine("Password has expired (Mirgration)!");
                                     result.Message += "Password has expired (Migration)!";
                                     break;
                                 case "SWEB_9000":
                                 case "SWEB_9034":
-                                    Console.WriteLine ("Invalid Captcha!");
+                                    Console.WriteLine("Invalid Captcha!");
                                     result.Message += "Invalid captcha!";
-                                    RefreshCaptcha.Execute ().Subscribe ();
+                                    RefreshCaptcha.Execute().Subscribe();
                                     break;
                                 case "SWEB_9036":
-                                    Console.WriteLine ("Invalid R0 user!");
+                                    Console.WriteLine("Invalid R0 user!");
                                     result.Message += "Invalid user!";
                                     break;
                                 case "AUTH_9002":
-                                    Console.WriteLine ("Invalid Username or Password!");
+                                    Console.WriteLine("Invalid Username or Password!");
                                     result.Message += "Invalid username or password!";
-                                    RefreshCaptcha.Execute ().Subscribe ();
+                                    RefreshCaptcha.Execute().Subscribe();
                                     break;
                                 case "SWEB_9014":
-                                    Console.WriteLine ("System Error!");
+                                    Console.WriteLine("System Error!");
                                     result.Message += "System error!";
                                     break;
                                 case "SWEB_8000":
-                                    Console.WriteLine ("Too Many (3) Wrong Attempts! Account Locked!");
+                                    Console.WriteLine("Too Many (3) Wrong Attempts! Account Locked!");
                                     result.Message += "Too many (3) wrong attempts! Account locked!";
                                     break;
                             }
                         } else {
-                            Console.WriteLine ("Authendication Phase 1 Successful!");
+                            Console.WriteLine("Authendication Phase 1 Successful!");
                         }
                     } else {
-                        Console.WriteLine ("Authendication Phase 1 Request Unsuccessful!");
+                        Console.WriteLine("Authendication Phase 1 Request Unsuccessful!");
                         result.Result = CommandResult.Results.Failed;
                         result.Message = "Login request failed! Unknown network error!";
                     }
 
-                    if (result.Result == CommandResult.Results.Failed)
+                    if (result.Result == CommandResult.Results.Failed) 
                         return result;
+                    
 
-                    RestRequest AuthendicateRequest2 = new RestRequest (URLs.Auth, Method.GET);
-                    AuthendicateRequest2.AddCookie ("Lang", "en");
-                    AuthendicateRequest2.AddHeader ("Referer", URLs.LoginURL);
-                    AuthendicateRequest2.AddHeader ("Upgrade-Insecure-Requests", "1");
-                    RestResponse AuthendicateResponse2 = (RestResponse) Client.Execute (AuthendicateRequest2);
+
+                    RestRequest AuthendicateRequest2 = new RestRequest(URLs.Auth, Method.GET);
+                    AuthendicateRequest2.AddCookie("Lang", "en");
+                    AuthendicateRequest2.AddHeader("Referer", URLs.LoginURL);
+                    AuthendicateRequest2.AddHeader("Upgrade-Insecure-Requests", "1");
+                    RestResponse AuthendicateResponse2 = (RestResponse)Client.Execute(AuthendicateRequest2);
                     if (!AuthendicateResponse2.IsSuccessful) {
-                        Console.WriteLine ("Authendication Phase 2 Request Unsucessful!");
+                        Console.WriteLine("Authendication Phase 2 Request Unsucessful!");
                         result.Result = CommandResult.Results.Failed;
                         result.Message = "Login request failed! Unknown network error!";
                     }
 
-                    if (result.Result == CommandResult.Results.Failed)
+                    if (result.Result == CommandResult.Results.Failed) 
                         return result;
+                    
 
-                    KeepAlive.Execute (URLs.WelcomeURL).Subscribe ();
+
+                    KeepAlive.Execute(URLs.WelcomeURL).Subscribe();
                 } catch (Exception ex) {
-                    Console.WriteLine ("Error on authendicating: " + ex.Message);
+                    Console.WriteLine("Error on authendicating: " + ex.Message);
                     result.Result = CommandResult.Results.Failed;
                     result.Message = "Login failed! " + ex.Message;
                 } finally {
@@ -230,62 +275,68 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
             });
         }
 
-        public ReactiveCommand<string, Unit> KeepAlive { get; }
-        private Task keepAlive (string referer) {
-            return Task.Run (() => {
+        public ReactiveCommand<string, Unit> KeepAlive {
+            get;
+        }
+        private Task keepAlive(string referer) {
+            return Task.Run(() => {
                 try {
                     string urlBase = "";
-                    if (referer.StartsWith (URLs.ServicesURL)) {
+                    if (referer.StartsWith(URLs.ServicesURL)) {
                         urlBase = "services";
-                        UpdateURL (URLs.ServicesURL);
-                    } else if (referer.StartsWith (URLs.ReturnsURL)) {
+                        UpdateURL(URLs.ServicesURL);
+                    } else if (referer.StartsWith(URLs.ReturnsURL)) {
                         urlBase = "returns";
-                        UpdateURL (URLs.ReturnsURL);
+                        UpdateURL(URLs.ReturnsURL);
                     }
-                    RestRequest KeepAliveRequest = new RestRequest (string.Format (URLs.KeepAlive, urlBase), Method.GET);
-                    KeepAliveRequest.AddCookie ("Lang", "en");
-                    KeepAliveRequest.AddHeader ("Referer", referer);
-                    RestResponse KeepAliveResponse = (RestResponse) this.Client.Execute (KeepAliveRequest);
+                    RestRequest KeepAliveRequest = new RestRequest(string.Format(URLs.KeepAlive, urlBase), Method.GET);
+                    KeepAliveRequest.AddCookie("Lang", "en");
+                    KeepAliveRequest.AddHeader("Referer", referer);
+                    RestResponse KeepAliveResponse = (RestResponse)this.Client.Execute(KeepAliveRequest);
                     if (KeepAliveResponse.IsSuccessful) {
-                        Models.AuthResponse authResponse = JsonConvert.DeserializeObject<Models.AuthResponse> (KeepAliveResponse.Content);
+                        Models.AuthResponse authResponse = JsonConvert.DeserializeObject < Models.AuthResponse > (KeepAliveResponse.Content);
 
-                        if (authResponse.successCode != "true")
-                            Console.WriteLine ("Keep alive request failed!");
-                        else
-                            Console.WriteLine ("Keep alive request success!");
+                        if (authResponse.successCode != "true") 
+                            Console.WriteLine("Keep alive request failed!");
+                         else 
+                            Console.WriteLine("Keep alive request success!");
+                        
+
                     } else {
-                        Console.WriteLine ("Keep alive request failed!");
+                        Console.WriteLine("Keep alive request failed!");
                     }
                 } catch (Exception ex) {
-                    Console.WriteLine ("Error on keep alive request: " + ex.Message);
+                    Console.WriteLine("Error on keep alive request: " + ex.Message);
                 }
             });
         }
 
-        public ReactiveCommand<Unit, CommandResult> GetMonths { get; }
-        private Task<CommandResult> getMonths () {
-            return Task.Run<CommandResult> (() => {
-                CommandResult result = new CommandResult (CommandResult.Results.Success, "Months Fetched Successfully!");
+        public ReactiveCommand<Unit, CommandResult> GetMonths {
+            get;
+        }
+        private Task<CommandResult> getMonths() {
+            return Task.Run<CommandResult>(() => {
+                CommandResult result = new CommandResult(CommandResult.Results.Success, "Months Fetched Successfully!");
                 try {
                     this.IsBusy = true;
                     this.Status = "Fetching Available Months...";
                     this.Cancelable = false;
 
-                    UpdateURL (URLs.ReturnsURL);
+                    UpdateURL(URLs.ReturnsURL);
 
-                    RestRequest GetMonthsRequest = new RestRequest (URLs.Months, Method.GET);
-                    GetMonthsRequest.AddCookie ("Lang", "en");
-                    GetMonthsRequest.AddHeader ("Referer", URLs.DashboardURL);
-                    RestResponse GetMonthsResponse = (RestResponse) this.Client.Execute (GetMonthsRequest);
+                    RestRequest GetMonthsRequest = new RestRequest(URLs.Months, Method.GET);
+                    GetMonthsRequest.AddCookie("Lang", "en");
+                    GetMonthsRequest.AddHeader("Referer", URLs.DashboardURL);
+                    RestResponse GetMonthsResponse = (RestResponse)this.Client.Execute(GetMonthsRequest);
                     if (GetMonthsResponse.IsSuccessful) {
-                        MonthsResponseData monthsData = JsonConvert.DeserializeObject<MonthsResponseData> (GetMonthsResponse.Content);
+                        MonthsResponseData monthsData = JsonConvert.DeserializeObject<MonthsResponseData>(GetMonthsResponse.Content);
                         if (monthsData.status == 1) {
-                            ObservableCollection<YearData> ReturnPeriods = new ObservableCollection<YearData> ();
-                            foreach (Year year in monthsData.data.Years) {
-                                ReturnPeriods.Add (new YearData (year));
+                            ObservableCollection<YearData> ReturnPeriods = new ObservableCollection<YearData>();
+                            foreach(Year year in monthsData.data.Years) {
+                                ReturnPeriods.Add(new YearData(year));
                             }
                             this.ReturnPeriods = ReturnPeriods;
-                            Console.WriteLine ("Get Months Successful.");
+                            Console.WriteLine("Get Months Successful.");
                         } else {
                             result.Result = CommandResult.Results.Failed;
                             result.Message = "Get Months Request Status Failed!";
@@ -295,7 +346,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                         result.Message = "Get Months Request Failed!";
                     }
                 } catch (Exception ex) {
-                    Console.WriteLine ("Get Months Failed. " + ex.Message);
+                    Console.WriteLine("Get Months Failed. " + ex.Message);
                     result.Message = "Get Months Failed." + ex.Message;
                     result.Result = CommandResult.Results.Failed;
                 } finally {
@@ -305,34 +356,36 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
             });
         }
 
-        public ReactiveCommand<Unit, CommandResult> GetUserStatus { get; }
-        private Task<CommandResult> getUserStatus () {
-            return Task.Run<CommandResult> (() => {
-                CommandResult result = new CommandResult (CommandResult.Results.Success, "Get UserStatus Successful.");
+        public ReactiveCommand<Unit, CommandResult> GetUserStatus {
+            get;
+        }
+        private Task<CommandResult> getUserStatus() {
+            return Task.Run<CommandResult>(() => {
+                CommandResult result = new CommandResult(CommandResult.Results.Success, "Get UserStatus Successful.");
 
                 try {
                     this.isBusy = true;
                     this.Status = "Fetching User Status...";
                     this.Cancelable = false;
 
-                    UpdateURL (URLs.ReturnsURL);
+                    UpdateURL(URLs.ReturnsURL);
 
-                    RestRequest request = new RestRequest (URLs.UserStatus, Method.GET);
-                    request.AddHeader ("Referer", URLs.DashboardURL);
-                    RestResponse response = (RestResponse) Client.Execute (request);
+                    RestRequest request = new RestRequest(URLs.UserStatus, Method.GET);
+                    request.AddHeader("Referer", URLs.DashboardURL);
+                    RestResponse response = (RestResponse)Client.Execute(request);
                     if (response.IsSuccessful) {
-                        UserStatus userStatus = JsonConvert.DeserializeObject<UserStatus> (response.Content);
+                        UserStatus userStatus = JsonConvert.DeserializeObject<UserStatus>(response.Content);
                         this.RegisteredGSTIN = userStatus.gstin;
                         this.RegisteredName = userStatus.bname;
                     } else {
                         string errorMessage = "Get UserStatus Request Failed!";
-                        Console.WriteLine (errorMessage);
+                        Console.WriteLine(errorMessage);
                         result.Message = errorMessage;
                         result.Result = CommandResult.Results.Failed;
                     }
                 } catch (Exception ex) {
                     string errorMessage = "Get UserStatus Failed!" + ex.Message;
-                    Console.WriteLine (errorMessage);
+                    Console.WriteLine(errorMessage);
                     result.Message = errorMessage;
                     result.Result = CommandResult.Results.Failed;
                 } finally {
@@ -345,9 +398,9 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
         #endregion
 
         #region "MiscMethods"
-        private void UpdateURL (string url) {
-            if (this.Client != null && (this.Client.BaseUrl == null || this.Client.BaseUrl.ToString () != url)) {
-                this.Client.BaseUrl = new Uri (url);
+        private void UpdateURL(string url) {
+            if (this.Client != null && (this.Client.BaseUrl == null || this.Client.BaseUrl.ToString() != url)) {
+                this.Client.BaseUrl = new Uri(url);
             }
         }
         #endregion
