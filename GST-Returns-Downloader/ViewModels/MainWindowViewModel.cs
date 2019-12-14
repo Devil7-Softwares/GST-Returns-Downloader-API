@@ -12,7 +12,7 @@ using ReactiveUI;
 using RestSharp;
 
 namespace Devil7.Automation.GSTR.Downloader.ViewModels {
-    public class MainWindowViewModel: ViewModelBase { 
+    public class MainWindowViewModel: ViewModelBase {
         #region Consturctor
         public MainWindowViewModel() {
             this.Random = new Random();
@@ -23,6 +23,9 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
             this.KeepAlive = ReactiveCommand.CreateFromTask<string>(keepAlive);
             this.GetMonths = ReactiveCommand.CreateFromTask<CommandResult>(getMonths);
             this.GetUserStatus = ReactiveCommand.CreateFromTask<CommandResult>(getUserStatus);
+            this.StartProcess = ReactiveCommand.CreateFromTask(startProcess);
+
+            this.LoadReturnsDatas();
         }
         #endregion
 
@@ -302,6 +305,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                             Console.WriteLine("Keep alive request success!");
                         
 
+
                     } else {
                         Console.WriteLine("Keep alive request failed!");
                     }
@@ -395,6 +399,78 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                 return result;
             });
         }
+
+        public ReactiveCommand<Unit, Unit> StartProcess {
+            get;
+        }
+        private Task startProcess() {
+            return Task.Run(() => {
+                foreach(YearData year in this.ReturnPeriods) {
+                    foreach(MonthData month in year.Months) {
+                        if (month.IsChecked) {
+                            keepAlive(URLs.DashboardURL);
+                            RoleStatus roleStatus = getRoleStatus(month.Value).Result;
+                            if (roleStatus != null && roleStatus.status == 1 && roleStatus.data != null && roleStatus.data.user != null && roleStatus.data.user.Count > 0) {
+                                foreach(User user in roleStatus.data.user) {
+                                    if (user.returns != null && user.returns.Count > 0) {
+                                        foreach(ReturnsData returns in this.ReturnsDatas) {
+                                            Return returnStatus = user.returns.Find(item => item.return_ty == returns.ReturnName.Replace(" ", ""));
+                                            if (returnStatus != null && returnStatus.status == "FIL" && returnStatus.tileDisable == false) {
+                                                foreach(FileType fileType in returns.FileTypes) {
+                                                    foreach(ReturnOperation operation in fileType.Operations) {
+                                                        if (operation.Value) {
+                                                            if (operation.Action != null) {
+                                                                CommandResult result = operation.Action(Client, month.Value);
+                                                                if (result.Result == CommandResult.Results.Success) {
+                                                                    if (result.Data is List<string>) {
+                                                                        foreach(string url in ((List<string>) result.Data)) {
+                                                                            Console.WriteLine(url);
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        private Task<RoleStatus> getRoleStatus(string monthValue) {
+            return Task.Run<RoleStatus>(() => {
+                RoleStatus value = null;
+
+                try {
+                    this.isBusy = true;
+                    this.Status = "Fetching Returns Status Details...";
+
+                    UpdateURL(URLs.ReturnsURL);
+
+                    RestRequest request = new RestRequest(string.Format(URLs.RoleStatus, monthValue), Method.GET);
+                    request.AddCookie("Lang", "en");
+                    request.AddHeader("Referer", URLs.DashboardURL);
+                    RestResponse response = (RestResponse)Client.Execute(request);
+                    if (response.IsSuccessful) {
+                        value = JsonConvert.DeserializeObject<RoleStatus>(response.Content);
+                    } else {
+                        Console.WriteLine("Error on RoleStatus Request for " + monthValue);
+                    }
+                } catch (Exception ex) {
+                    Console.WriteLine("Fetch RoleStatus Failed!. " + ex.Message);
+                } finally {
+                    this.isBusy = false;
+                }
+
+                return value;
+            });
+        }
         #endregion
 
         #region "MiscMethods"
@@ -402,6 +478,118 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
             if (this.Client != null && (this.Client.BaseUrl == null || this.Client.BaseUrl.ToString() != url)) {
                 this.Client.BaseUrl = new Uri(url);
             }
+        }
+
+        private void LoadReturnsDatas() {
+            ObservableCollection<ReturnsData> returnsDatas = new ObservableCollection<ReturnsData>();
+
+            ReturnsData GSTR1 = new ReturnsData() {
+                ReturnName = "GSTR 1",
+                FileTypes = new ObservableCollection<FileType>() {
+                    new FileType() {
+                        FileTypeName = "PDF",
+                        Operations = new ObservableCollection<ReturnOperation>() {
+                            new ReturnOperation() {
+                                OperationName = "Download",
+                            }
+                        }
+                    },
+                    new FileType() {
+                        FileTypeName = "JSON",
+                        Operations = new ObservableCollection<ReturnOperation>() {
+                            new ReturnOperation() {
+                                OperationName = "Generate",
+                                Action = DownloadMethods.GSTR1_JSON_GENERATE
+                            },
+                            new ReturnOperation() {
+                                OperationName = "Download",
+                                Action = DownloadMethods.GSTR1_JSON_DOWNLOAD
+                            }
+                        }
+                    }
+                }
+            };
+
+            ReturnsData GSTR2A = new ReturnsData() {
+                ReturnName = "GSTR 2A",
+                FileTypes = new ObservableCollection<FileType>() {
+                    new FileType() {
+                        FileTypeName = "Excel",
+                        Operations = new ObservableCollection<ReturnOperation>() {
+                            new ReturnOperation() {
+                                OperationName = "Generate",
+                            },
+                            new ReturnOperation() {
+                                OperationName = "Download",
+                            }
+                        }
+                    },
+                    new FileType() {
+                        FileTypeName = "JSON",
+                        Operations = new ObservableCollection<ReturnOperation>() {
+                            new ReturnOperation() {
+                                OperationName = "Generate",
+                            },
+                            new ReturnOperation() {
+                                OperationName = "Download",
+                            }
+                        }
+                    }
+                }
+            };
+
+            ReturnsData GSTR3B = new ReturnsData() {
+                ReturnName = "GSTR 3B",
+                FileTypes = new ObservableCollection<FileType>() {
+                    new FileType() {
+                        FileTypeName = "PDF",
+                        Operations = new ObservableCollection<ReturnOperation>() {
+                            new ReturnOperation() {
+                                OperationName = "Download",
+                            }
+                        }
+                    }
+                }
+            };
+
+            ReturnsData GSTR4 = new ReturnsData() {
+                ReturnName = "GSTR 4",
+                FileTypes = new ObservableCollection<FileType>() {
+                    new FileType() {
+                        FileTypeName = "PDF",
+                        Operations = new ObservableCollection<ReturnOperation>() {
+                            new ReturnOperation() {
+                                OperationName = "Download"
+                            }
+                        }
+                    }
+                }
+            };
+
+            ReturnsData GSTR4A = new ReturnsData() {
+                ReturnName = "GSTR 4A",
+                FileTypes = new ObservableCollection<FileType>() {
+                    new FileType() {
+                        FileTypeName = "JSON",
+                        Operations = new ObservableCollection<ReturnOperation>() {
+                            new ReturnOperation() {
+                                OperationName = "Generate",
+                            },
+                            new ReturnOperation() {
+                                OperationName = "Download",
+                            }
+                        }
+                    }
+                }
+            };
+
+            returnsDatas.Add(GSTR1);
+            returnsDatas.Add(GSTR2A);
+            returnsDatas.Add(GSTR3B);
+            returnsDatas.Add(GSTR4);
+            returnsDatas.Add(GSTR4A);
+
+            this.ReturnsDatas = returnsDatas;
         }
         #endregion
     }
