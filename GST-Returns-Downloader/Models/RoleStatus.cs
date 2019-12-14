@@ -12,14 +12,14 @@ namespace Devil7.Automation.GSTR.Downloader.Models
 
     public class User
     {
-        public IList<Return> returns { get; set; }
+        public List<Return> returns { get; set; }
     }
 
     public class RoleData
     {
         public string userType { get; set; }
         public string userPref { get; set; }
-        public IList<User> user { get; set; }
+        public List<User> user { get; set; }
     }
 
     public class RoleStatus
