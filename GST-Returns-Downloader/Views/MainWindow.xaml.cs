@@ -3,6 +3,7 @@ using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using Devil7.Automation.GSTR.Downloader.Controls;
 using Devil7.Automation.GSTR.Downloader.Misc;
 using Devil7.Automation.GSTR.Downloader.Models;
 
@@ -18,6 +19,8 @@ namespace Devil7.Automation.GSTR.Downloader.Views
         private void InitializeComponent()
         {
             AvaloniaXamlLoader.Load(this);
+
+            this.downloadManager = this.FindControl<DownloadManager>("DownloadManager");
         }
 
         #region Properties
@@ -28,11 +31,16 @@ namespace Devil7.Automation.GSTR.Downloader.Views
                 return ((ViewModels.MainWindowViewModel)this.DataContext);
             }
         }
+
+        private DownloadManager downloadManager;
+        private DownloadManager DownloadManager { get => downloadManager; }
         #endregion
 
         #region Events
         private void Window_Opened(object sender, EventArgs e)
         {
+            this.ViewModel.SetDownloadManager(downloadManager);
+
             this.ViewModel.InitializeAPI.Execute().Subscribe();
 
             this.ViewModel.InitializeAPI.Subscribe(async result =>

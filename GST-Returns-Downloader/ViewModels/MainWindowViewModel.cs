@@ -5,6 +5,7 @@ using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
+using Devil7.Automation.GSTR.Downloader.Controls;
 using Devil7.Automation.GSTR.Downloader.Misc;
 using Devil7.Automation.GSTR.Downloader.Models;
 using Newtonsoft.Json;
@@ -35,6 +36,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         #region Variables
         private Random Random;
         private RestClient Client;
+        private DownloadManager downloadManager;
 
         private string username = "";
         private string password = "";
@@ -132,7 +134,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                     this.Random = new Random();
                     this.Client = new RestClient(URLs.ServicesURL);
                     this.Client.CookieContainer = new System.Net.CookieContainer();
-                    this.Client.UserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36";
+                    this.Client.UserAgent = DownloadManager.UserAgent;
 
                     RestRequest InitialRequest = new RestRequest(URLs.Login, Method.GET);
                     RestResponse InitialResponse = (RestResponse)Client.Execute(InitialRequest);
@@ -532,7 +534,9 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                                                                     {
                                                                         foreach (string url in ((List<string>)result.Data))
                                                                         {
-                                                                            Console.WriteLine(url);
+                                                                            DownloadManager.DownloadItem downloadItem = new DownloadManager.DownloadItem(url, @"D:\");
+                                                                            downloadItem.CustomCookies = Client.CookieContainer.GetCookies(Client.BaseUrl);
+                                                                            downloadManager.Downloads.Add(downloadItem);
                                                                         }
                                                                     }
                                                                 }
@@ -591,7 +595,14 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         }
         #endregion
 
-        #region "MiscMethods"
+        #region Public Methods
+        public void SetDownloadManager(DownloadManager downloadManager)
+        {
+            this.downloadManager = downloadManager;
+        }
+        #endregion
+
+        #region Private Methods
         private void UpdateURL(string url)
         {
             if (this.Client != null && (this.Client.BaseUrl == null || this.Client.BaseUrl.ToString() != url))
