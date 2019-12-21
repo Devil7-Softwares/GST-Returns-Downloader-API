@@ -9,5 +9,5 @@ namespace Devil7.Automation.GSTR.Downloader
         {
             AvaloniaXamlLoader.Load(this);
         }
-   }
+    }
 }

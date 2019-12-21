@@ -1,5 +1,7 @@
-namespace Devil7.Automation.GSTR.Downloader.Models {
-    public class UserStatus {
+namespace Devil7.Automation.GSTR.Downloader.Models
+{
+    public class UserStatus
+    {
         public string bnkStat { get; set; }
         public string role { get; set; }
         public string stcd { get; set; }

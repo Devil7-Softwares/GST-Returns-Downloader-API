@@ -11,10 +11,13 @@ using Newtonsoft.Json;
 using ReactiveUI;
 using RestSharp;
 
-namespace Devil7.Automation.GSTR.Downloader.ViewModels {
-    public class MainWindowViewModel: ViewModelBase {
+namespace Devil7.Automation.GSTR.Downloader.ViewModels
+{
+    public class MainWindowViewModel : ViewModelBase
+    {
         #region Consturctor
-        public MainWindowViewModel() {
+        public MainWindowViewModel()
+        {
             this.Random = new Random();
 
             this.InitializeAPI = ReactiveCommand.CreateFromTask<CommandResult>(initializeAPI);
@@ -48,50 +51,61 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
         #endregion
 
         #region Properties
-        public string Username {
+        public string Username
+        {
             get => username;
             set => this.RaiseAndSetIfChanged(ref username, value);
         }
-        public string Password {
+        public string Password
+        {
             get => password;
             set => this.RaiseAndSetIfChanged(ref password, value);
         }
-        public Bitmap CaptchaImage {
+        public Bitmap CaptchaImage
+        {
             get => captchaImage;
             set => this.RaiseAndSetIfChanged(ref captchaImage, value);
         }
-        public string Captcha {
+        public string Captcha
+        {
             get => captcha;
             set => this.RaiseAndSetIfChanged(ref captcha, value);
         }
 
-        public string RegisteredName {
+        public string RegisteredName
+        {
             get => registeredName;
             set => this.RaiseAndSetIfChanged(ref registeredName, value);
         }
-        public string RegisteredGSTIN {
+        public string RegisteredGSTIN
+        {
             get => registeredGSTIN;
             set => this.RaiseAndSetIfChanged(ref registeredGSTIN, value);
         }
 
-        public bool IsBusy {
+        public bool IsBusy
+        {
             get => isBusy;
             set => this.RaiseAndSetIfChanged(ref isBusy, value);
         }
-        public string Status {
+        public string Status
+        {
             get => status;
             set => this.RaiseAndSetIfChanged(ref status, value);
         }
 
-        public ObservableCollection<YearData> ReturnPeriods {
+        public ObservableCollection<YearData> ReturnPeriods
+        {
             get => returnPeriods;
             set => this.RaiseAndSetIfChanged(ref returnPeriods, value);
         }
-        public bool Cancelable {
+        public bool Cancelable
+        {
             get => cancelable;
             set => this.RaiseAndSetIfChanged(ref cancelable, value);
         }
-        public ObservableCollection<ReturnsData> ReturnsDatas {
+        public ObservableCollection<ReturnsData> ReturnsDatas
+        {
             get => returnsDatas;
             set => this.RaiseAndSetIfChanged(ref returnsDatas, value);
         }
@@ -99,18 +113,22 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
 
         #region Commands
         public ReactiveCommand<Unit, Unit> Cancel;
-        public ReactiveCommand<Unit, CommandResult> InitializeAPI {
+        public ReactiveCommand<Unit, CommandResult> InitializeAPI
+        {
             get;
         }
-        private Task<CommandResult> initializeAPI() {
-            return Task.Run<CommandResult>(() => {
+        private Task<CommandResult> initializeAPI()
+        {
+            return Task.Run<CommandResult>(() =>
+            {
                 Models.CommandResult result = new CommandResult(CommandResult.Results.Success, "Successfully initialized API.");
 
                 this.IsBusy = true;
                 this.Status = "Initializing API...";
                 this.Cancelable = false;
 
-                try {
+                try
+                {
                     this.Random = new Random();
                     this.Client = new RestClient(URLs.ServicesURL);
                     this.Client.CookieContainer = new System.Net.CookieContainer();
@@ -118,19 +136,26 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
 
                     RestRequest InitialRequest = new RestRequest(URLs.Login, Method.GET);
                     RestResponse InitialResponse = (RestResponse)Client.Execute(InitialRequest);
-                    if (InitialResponse.IsSuccessful) {
+                    if (InitialResponse.IsSuccessful)
+                    {
                         Console.WriteLine("Initialization successful!");
                         this.RefreshCaptcha.Execute().Subscribe();
-                    } else {
+                    }
+                    else
+                    {
                         Console.WriteLine(InitialResponse.ErrorMessage);
                         result.Result = CommandResult.Results.Failed;
                         result.Message = "Unable to initialize API. " + InitialResponse.ErrorMessage;
                     }
-                } catch (Exception ex) {
+                }
+                catch (Exception ex)
+                {
                     Console.WriteLine("Error on initializing API: " + ex.Message);
                     result.Result = CommandResult.Results.Failed;
                     result.Message = "Unable to initialize API. " + ex.Message;
-                } finally {
+                }
+                finally
+                {
                     this.IsBusy = false;
                 }
 
@@ -138,36 +163,47 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
             });
         }
 
-        public ReactiveCommand<Unit, CommandResult> RefreshCaptcha {
+        public ReactiveCommand<Unit, CommandResult> RefreshCaptcha
+        {
             get;
         }
-        private Task<CommandResult> refreshCaptcha() {
-            return Task.Run<CommandResult>(() => {
+        private Task<CommandResult> refreshCaptcha()
+        {
+            return Task.Run<CommandResult>(() =>
+            {
                 Models.CommandResult result = new CommandResult(CommandResult.Results.Success, "Successfully loaded/refreshed captcha.");
 
                 this.IsBusy = true;
                 this.Status = "Loading Captcha...";
                 this.Cancelable = false;
 
-                try {
+                try
+                {
                     UpdateURL(URLs.ServicesURL);
 
                     RestRequest CaptchaRequest = new RestRequest(URLs.Captcha, Method.GET);
                     CaptchaRequest.AddParameter("rnd", Random.NextDouble());
                     RestResponse CaptchaResponse = (RestResponse)Client.Execute(CaptchaRequest);
-                    if (CaptchaResponse.IsSuccessful) {
+                    if (CaptchaResponse.IsSuccessful)
+                    {
                         this.CaptchaImage = new Bitmap(new System.IO.MemoryStream(CaptchaResponse.RawBytes));
                         Console.WriteLine("Captcha Request Successful!");
-                    } else {
+                    }
+                    else
+                    {
                         Console.WriteLine(CaptchaResponse.ErrorMessage);
                         result.Result = CommandResult.Results.Failed;
                         result.Message = "Captcha failed to load! " + CaptchaResponse.ErrorMessage;
                     }
-                } catch (Exception ex) {
+                }
+                catch (Exception ex)
+                {
                     Console.WriteLine("Error on refreshing captcha: " + ex.Message);
                     result.Result = CommandResult.Results.Failed;
                     result.Message = "Captcha failed to load! " + ex.Message;
-                } finally {
+                }
+                finally
+                {
                     this.IsBusy = false;
                 }
 
@@ -175,13 +211,17 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
             });
         }
 
-        public ReactiveCommand<Unit, CommandResult> Authendicate {
+        public ReactiveCommand<Unit, CommandResult> Authendicate
+        {
             get;
         }
-        private Task<CommandResult> authendicate() {
-            return Task.Run<CommandResult>(() => {
+        private Task<CommandResult> authendicate()
+        {
+            return Task.Run<CommandResult>(() =>
+            {
                 Models.CommandResult result = new CommandResult(CommandResult.Results.Success, "Successfully logged in.");
-                try {
+                try
+                {
                     this.IsBusy = true;
                     this.Status = "Logging in...";
                     this.Cancelable = false;
@@ -191,14 +231,17 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                     RestRequest AuthendicateRequest1 = new RestRequest(URLs.Authendicate, Method.POST);
                     AuthendicateRequest1.AddJsonBody(new Misc.AuthenticationData(this.Username, this.Password, this.Captcha));
                     RestResponse AuthendicateResponse1 = (RestResponse)Client.Execute(AuthendicateRequest1);
-                    if (AuthendicateResponse1.IsSuccessful) {
-                        Models.AuthResponse authResponse = JsonConvert.DeserializeObject < Models.AuthResponse > (AuthendicateResponse1.Content);
-                        if (authResponse.message != "auth") {
+                    if (AuthendicateResponse1.IsSuccessful)
+                    {
+                        Models.AuthResponse authResponse = JsonConvert.DeserializeObject<Models.AuthResponse>(AuthendicateResponse1.Content);
+                        if (authResponse.message != "auth")
+                        {
                             Console.Write("Authendication Phase 1 Failed! ");
                             result.Result = CommandResult.Results.Failed;
                             result.Message = "Login failed. ";
 
-                            switch (authResponse.errorCode) {
+                            switch (authResponse.errorCode)
+                            {
                                 case "SWEB_9006":
                                     Console.WriteLine("Server Busy!");
                                     result.Message += "Server busy!";
@@ -235,18 +278,22 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                                     result.Message += "Too many (3) wrong attempts! Account locked!";
                                     break;
                             }
-                        } else {
+                        }
+                        else
+                        {
                             Console.WriteLine("Authendication Phase 1 Successful!");
                         }
-                    } else {
+                    }
+                    else
+                    {
                         Console.WriteLine("Authendication Phase 1 Request Unsuccessful!");
                         result.Result = CommandResult.Results.Failed;
                         result.Message = "Login request failed! Unknown network error!";
                     }
 
-                    if (result.Result == CommandResult.Results.Failed) 
+                    if (result.Result == CommandResult.Results.Failed)
                         return result;
-                    
+
 
 
                     RestRequest AuthendicateRequest2 = new RestRequest(URLs.Auth, Method.GET);
@@ -254,23 +301,28 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                     AuthendicateRequest2.AddHeader("Referer", URLs.LoginURL);
                     AuthendicateRequest2.AddHeader("Upgrade-Insecure-Requests", "1");
                     RestResponse AuthendicateResponse2 = (RestResponse)Client.Execute(AuthendicateRequest2);
-                    if (!AuthendicateResponse2.IsSuccessful) {
+                    if (!AuthendicateResponse2.IsSuccessful)
+                    {
                         Console.WriteLine("Authendication Phase 2 Request Unsucessful!");
                         result.Result = CommandResult.Results.Failed;
                         result.Message = "Login request failed! Unknown network error!";
                     }
 
-                    if (result.Result == CommandResult.Results.Failed) 
+                    if (result.Result == CommandResult.Results.Failed)
                         return result;
-                    
+
 
 
                     KeepAlive.Execute(URLs.WelcomeURL).Subscribe();
-                } catch (Exception ex) {
+                }
+                catch (Exception ex)
+                {
                     Console.WriteLine("Error on authendicating: " + ex.Message);
                     result.Result = CommandResult.Results.Failed;
                     result.Message = "Login failed! " + ex.Message;
-                } finally {
+                }
+                finally
+                {
                     this.IsBusy = false;
                 }
 
@@ -278,17 +330,24 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
             });
         }
 
-        public ReactiveCommand<string, Unit> KeepAlive {
+        public ReactiveCommand<string, Unit> KeepAlive
+        {
             get;
         }
-        private Task keepAlive(string referer) {
-            return Task.Run(() => {
-                try {
+        private Task keepAlive(string referer)
+        {
+            return Task.Run(() =>
+            {
+                try
+                {
                     string urlBase = "";
-                    if (referer.StartsWith(URLs.ServicesURL)) {
+                    if (referer.StartsWith(URLs.ServicesURL))
+                    {
                         urlBase = "services";
                         UpdateURL(URLs.ServicesURL);
-                    } else if (referer.StartsWith(URLs.ReturnsURL)) {
+                    }
+                    else if (referer.StartsWith(URLs.ReturnsURL))
+                    {
                         urlBase = "returns";
                         UpdateURL(URLs.ReturnsURL);
                     }
@@ -296,32 +355,41 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                     KeepAliveRequest.AddCookie("Lang", "en");
                     KeepAliveRequest.AddHeader("Referer", referer);
                     RestResponse KeepAliveResponse = (RestResponse)this.Client.Execute(KeepAliveRequest);
-                    if (KeepAliveResponse.IsSuccessful) {
-                        Models.AuthResponse authResponse = JsonConvert.DeserializeObject < Models.AuthResponse > (KeepAliveResponse.Content);
+                    if (KeepAliveResponse.IsSuccessful)
+                    {
+                        Models.AuthResponse authResponse = JsonConvert.DeserializeObject<Models.AuthResponse>(KeepAliveResponse.Content);
 
-                        if (authResponse.successCode != "true") 
+                        if (authResponse.successCode != "true")
                             Console.WriteLine("Keep alive request failed!");
-                         else 
+                        else
                             Console.WriteLine("Keep alive request success!");
-                        
 
 
-                    } else {
+
+                    }
+                    else
+                    {
                         Console.WriteLine("Keep alive request failed!");
                     }
-                } catch (Exception ex) {
+                }
+                catch (Exception ex)
+                {
                     Console.WriteLine("Error on keep alive request: " + ex.Message);
                 }
             });
         }
 
-        public ReactiveCommand<Unit, CommandResult> GetMonths {
+        public ReactiveCommand<Unit, CommandResult> GetMonths
+        {
             get;
         }
-        private Task<CommandResult> getMonths() {
-            return Task.Run<CommandResult>(() => {
+        private Task<CommandResult> getMonths()
+        {
+            return Task.Run<CommandResult>(() =>
+            {
                 CommandResult result = new CommandResult(CommandResult.Results.Success, "Months Fetched Successfully!");
-                try {
+                try
+                {
                     this.IsBusy = true;
                     this.Status = "Fetching Available Months...";
                     this.Cancelable = false;
@@ -332,42 +400,57 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                     GetMonthsRequest.AddCookie("Lang", "en");
                     GetMonthsRequest.AddHeader("Referer", URLs.DashboardURL);
                     RestResponse GetMonthsResponse = (RestResponse)this.Client.Execute(GetMonthsRequest);
-                    if (GetMonthsResponse.IsSuccessful) {
+                    if (GetMonthsResponse.IsSuccessful)
+                    {
                         MonthsResponseData monthsData = JsonConvert.DeserializeObject<MonthsResponseData>(GetMonthsResponse.Content);
-                        if (monthsData.status == 1) {
+                        if (monthsData.status == 1)
+                        {
                             ObservableCollection<YearData> ReturnPeriods = new ObservableCollection<YearData>();
-                            foreach(Year year in monthsData.data.Years) {
+                            foreach (Year year in monthsData.data.Years)
+                            {
                                 ReturnPeriods.Add(new YearData(year));
                             }
                             this.ReturnPeriods = ReturnPeriods;
                             Console.WriteLine("Get Months Successful.");
-                        } else {
+                        }
+                        else
+                        {
                             result.Result = CommandResult.Results.Failed;
                             result.Message = "Get Months Request Status Failed!";
                         }
-                    } else {
+                    }
+                    else
+                    {
                         result.Result = CommandResult.Results.Failed;
                         result.Message = "Get Months Request Failed!";
                     }
-                } catch (Exception ex) {
+                }
+                catch (Exception ex)
+                {
                     Console.WriteLine("Get Months Failed. " + ex.Message);
                     result.Message = "Get Months Failed." + ex.Message;
                     result.Result = CommandResult.Results.Failed;
-                } finally {
+                }
+                finally
+                {
                     this.IsBusy = false;
                 }
                 return result;
             });
         }
 
-        public ReactiveCommand<Unit, CommandResult> GetUserStatus {
+        public ReactiveCommand<Unit, CommandResult> GetUserStatus
+        {
             get;
         }
-        private Task<CommandResult> getUserStatus() {
-            return Task.Run<CommandResult>(() => {
+        private Task<CommandResult> getUserStatus()
+        {
+            return Task.Run<CommandResult>(() =>
+            {
                 CommandResult result = new CommandResult(CommandResult.Results.Success, "Get UserStatus Successful.");
 
-                try {
+                try
+                {
                     this.isBusy = true;
                     this.Status = "Fetching User Status...";
                     this.Cancelable = false;
@@ -377,22 +460,29 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                     RestRequest request = new RestRequest(URLs.UserStatus, Method.GET);
                     request.AddHeader("Referer", URLs.DashboardURL);
                     RestResponse response = (RestResponse)Client.Execute(request);
-                    if (response.IsSuccessful) {
+                    if (response.IsSuccessful)
+                    {
                         UserStatus userStatus = JsonConvert.DeserializeObject<UserStatus>(response.Content);
                         this.RegisteredGSTIN = userStatus.gstin;
                         this.RegisteredName = userStatus.bname;
-                    } else {
+                    }
+                    else
+                    {
                         string errorMessage = "Get UserStatus Request Failed!";
                         Console.WriteLine(errorMessage);
                         result.Message = errorMessage;
                         result.Result = CommandResult.Results.Failed;
                     }
-                } catch (Exception ex) {
+                }
+                catch (Exception ex)
+                {
                     string errorMessage = "Get UserStatus Failed!" + ex.Message;
                     Console.WriteLine(errorMessage);
                     result.Message = errorMessage;
                     result.Result = CommandResult.Results.Failed;
-                } finally {
+                }
+                finally
+                {
                     this.isBusy = false;
                 }
 
@@ -400,30 +490,48 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
             });
         }
 
-        public ReactiveCommand<Unit, Unit> StartProcess {
+        public ReactiveCommand<Unit, Unit> StartProcess
+        {
             get;
         }
-        private Task startProcess() {
-            return Task.Run(() => {
-                foreach(YearData year in this.ReturnPeriods) {
-                    foreach(MonthData month in year.Months) {
-                        if (month.IsChecked) {
+        private Task startProcess()
+        {
+            return Task.Run(() =>
+            {
+                foreach (YearData year in this.ReturnPeriods)
+                {
+                    foreach (MonthData month in year.Months)
+                    {
+                        if (month.IsChecked)
+                        {
                             keepAlive(URLs.DashboardURL);
                             RoleStatus roleStatus = getRoleStatus(month.Value).Result;
-                            if (roleStatus != null && roleStatus.status == 1 && roleStatus.data != null && roleStatus.data.user != null && roleStatus.data.user.Count > 0) {
-                                foreach(User user in roleStatus.data.user) {
-                                    if (user.returns != null && user.returns.Count > 0) {
-                                        foreach(ReturnsData returns in this.ReturnsDatas) {
+                            if (roleStatus != null && roleStatus.status == 1 && roleStatus.data != null && roleStatus.data.user != null && roleStatus.data.user.Count > 0)
+                            {
+                                foreach (User user in roleStatus.data.user)
+                                {
+                                    if (user.returns != null && user.returns.Count > 0)
+                                    {
+                                        foreach (ReturnsData returns in this.ReturnsDatas)
+                                        {
                                             Return returnStatus = user.returns.Find(item => item.return_ty == returns.ReturnName.Replace(" ", ""));
-                                            if (returnStatus != null && returnStatus.status == "FIL" && returnStatus.tileDisable == false) {
-                                                foreach(FileType fileType in returns.FileTypes) {
-                                                    foreach(ReturnOperation operation in fileType.Operations) {
-                                                        if (operation.Value) {
-                                                            if (operation.Action != null) {
+                                            if (returnStatus != null && returnStatus.status == "FIL" && returnStatus.tileDisable == false)
+                                            {
+                                                foreach (FileType fileType in returns.FileTypes)
+                                                {
+                                                    foreach (ReturnOperation operation in fileType.Operations)
+                                                    {
+                                                        if (operation.Value)
+                                                        {
+                                                            if (operation.Action != null)
+                                                            {
                                                                 CommandResult result = operation.Action(Client, month.Value);
-                                                                if (result.Result == CommandResult.Results.Success) {
-                                                                    if (result.Data is List<string>) {
-                                                                        foreach(string url in ((List<string>) result.Data)) {
+                                                                if (result.Result == CommandResult.Results.Success)
+                                                                {
+                                                                    if (result.Data is List<string>)
+                                                                    {
+                                                                        foreach (string url in ((List<string>)result.Data))
+                                                                        {
                                                                             Console.WriteLine(url);
                                                                         }
                                                                     }
@@ -443,11 +551,14 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
             });
         }
 
-        private Task<RoleStatus> getRoleStatus(string monthValue) {
-            return Task.Run<RoleStatus>(() => {
+        private Task<RoleStatus> getRoleStatus(string monthValue)
+        {
+            return Task.Run<RoleStatus>(() =>
+            {
                 RoleStatus value = null;
 
-                try {
+                try
+                {
                     this.isBusy = true;
                     this.Status = "Fetching Returns Status Details...";
 
@@ -457,14 +568,21 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                     request.AddCookie("Lang", "en");
                     request.AddHeader("Referer", URLs.DashboardURL);
                     RestResponse response = (RestResponse)Client.Execute(request);
-                    if (response.IsSuccessful) {
+                    if (response.IsSuccessful)
+                    {
                         value = JsonConvert.DeserializeObject<RoleStatus>(response.Content);
-                    } else {
+                    }
+                    else
+                    {
                         Console.WriteLine("Error on RoleStatus Request for " + monthValue);
                     }
-                } catch (Exception ex) {
+                }
+                catch (Exception ex)
+                {
                     Console.WriteLine("Fetch RoleStatus Failed!. " + ex.Message);
-                } finally {
+                }
+                finally
+                {
                     this.isBusy = false;
                 }
 
@@ -474,16 +592,20 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
         #endregion
 
         #region "MiscMethods"
-        private void UpdateURL(string url) {
-            if (this.Client != null && (this.Client.BaseUrl == null || this.Client.BaseUrl.ToString() != url)) {
+        private void UpdateURL(string url)
+        {
+            if (this.Client != null && (this.Client.BaseUrl == null || this.Client.BaseUrl.ToString() != url))
+            {
                 this.Client.BaseUrl = new Uri(url);
             }
         }
 
-        private void LoadReturnsDatas() {
+        private void LoadReturnsDatas()
+        {
             ObservableCollection<ReturnsData> returnsDatas = new ObservableCollection<ReturnsData>();
 
-            ReturnsData GSTR1 = new ReturnsData() {
+            ReturnsData GSTR1 = new ReturnsData()
+            {
                 ReturnName = "GSTR 1",
                 FileTypes = new ObservableCollection<FileType>() {
                     new FileType() {
@@ -510,7 +632,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                 }
             };
 
-            ReturnsData GSTR2A = new ReturnsData() {
+            ReturnsData GSTR2A = new ReturnsData()
+            {
                 ReturnName = "GSTR 2A",
                 FileTypes = new ObservableCollection<FileType>() {
                     new FileType() {
@@ -538,7 +661,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                 }
             };
 
-            ReturnsData GSTR3B = new ReturnsData() {
+            ReturnsData GSTR3B = new ReturnsData()
+            {
                 ReturnName = "GSTR 3B",
                 FileTypes = new ObservableCollection<FileType>() {
                     new FileType() {
@@ -552,7 +676,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                 }
             };
 
-            ReturnsData GSTR4 = new ReturnsData() {
+            ReturnsData GSTR4 = new ReturnsData()
+            {
                 ReturnName = "GSTR 4",
                 FileTypes = new ObservableCollection<FileType>() {
                     new FileType() {
@@ -566,7 +691,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
                 }
             };
 
-            ReturnsData GSTR4A = new ReturnsData() {
+            ReturnsData GSTR4A = new ReturnsData()
+            {
                 ReturnName = "GSTR 4A",
                 FileTypes = new ObservableCollection<FileType>() {
                     new FileType() {

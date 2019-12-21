@@ -4,8 +4,10 @@ using System.ComponentModel;
 using Devil7.Automation.GSTR.Downloader.Models;
 using ReactiveUI;
 
-namespace Devil7.Automation.GSTR.Downloader.ViewModels {
-    public class ReturnOperation: ReactiveObject { 
+namespace Devil7.Automation.GSTR.Downloader.ViewModels
+{
+    public class ReturnOperation : ReactiveObject
+    {
         #region Variables
         private string operationName;
         private bool value;
@@ -13,23 +15,28 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
         #endregion
 
         #region Properties
-        public string OperationName {
+        public string OperationName
+        {
             get => operationName;
             set => this.RaiseAndSetIfChanged(ref operationName, value);
         }
-        public bool Value {
+        public bool Value
+        {
             get => value;
             set => this.RaiseAndSetIfChanged(ref this.value, value);
         }
-        public action Action {
+        public action Action
+        {
             get;
             set;
         }
         #endregion
     }
-    public class FileType: ReactiveObject { 
+    public class FileType : ReactiveObject
+    {
         #region Constructor
-        public FileType() {
+        public FileType()
+        {
             this.PropertyChanged += FileType_PropertyChanged;
         }
         #endregion
@@ -40,34 +47,41 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
         #endregion
 
         #region Properties
-        public string FileTypeName {
+        public string FileTypeName
+        {
             get => fileTypeName;
             set => this.RaiseAndSetIfChanged(ref fileTypeName, value);
         }
-        public ObservableCollection<ReturnOperation> Operations {
+        public ObservableCollection<ReturnOperation> Operations
+        {
             get => operations;
-            set {
+            set
+            {
                 this.RaiseAndSetIfChanged(ref operations, value);
             }
         }
         #endregion
 
         #region Events
-        private void FileType_PropertyChanged(object sender, PropertyChangedEventArgs e) {
-            if (e.PropertyName == nameof(this.Operations)) {
-                foreach(ReturnOperation operation in this.Operations) {
+        private void FileType_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(this.Operations))
+            {
+                foreach (ReturnOperation operation in this.Operations)
+                {
                     operation.PropertyChanged += Operation_PropertyChanged;
                 }
             }
         }
 
-        private void Operation_PropertyChanged(object sender, PropertyChangedEventArgs e) {
+        private void Operation_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
             ReturnOperation returnOperation = sender as ReturnOperation;
             if (e.PropertyName == nameof(ReturnOperation.Value) && returnOperation != null)
             {
                 if (sender is ReturnOperation && returnOperation.Value)
                 {
-                    foreach(ReturnOperation operation in this.Operations)
+                    foreach (ReturnOperation operation in this.Operations)
                     {
                         if (operation != returnOperation && operation.Value)
                             operation.Value = false;
@@ -77,18 +91,21 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels {
         }
         #endregion
     }
-    public class ReturnsData: ReactiveObject { 
+    public class ReturnsData : ReactiveObject
+    {
         #region Variables
         private string returnName = "";
         private ObservableCollection<FileType> fileTypes;
         #endregion
 
         #region Properties
-        public string ReturnName {
+        public string ReturnName
+        {
             get => returnName;
             set => this.RaiseAndSetIfChanged(ref returnName, value);
         }
-        public ObservableCollection<FileType> FileTypes {
+        public ObservableCollection<FileType> FileTypes
+        {
             get => fileTypes;
             set => this.RaiseAndSetIfChanged(ref fileTypes, value);
         }
