@@ -95,12 +95,14 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
                             {
                                 string Message = "File Generation is In Progress: " + monthValue;
                                 Console.WriteLine(Message);
+                                result.Message = Message;
                                 result.Result = CommandResult.Results.Success;
                             }
                             else
                             {
                                 Console.WriteLine(returnResponse.error.detailMessage);
                                 result.Message = returnResponse.error.detailMessage;
+                                result.Result = CommandResult.Results.Failed;
                             }
                         }
                     }
