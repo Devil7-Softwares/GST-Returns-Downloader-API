@@ -1,151 +1,189 @@
-<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="clr-namespace:Devil7.Automation.GSTR.Downloader.ViewModels;assembly=Devil7.Automation.GSTR.Downloader" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:controls="clr-namespace:Devil7.Automation.GSTR.Downloader.Controls;assembly=Devil7.Automation.GSTR.Downloader" mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="800" x:Class="Devil7.Automation.GSTR.Downloader.Views.MainWindow" Icon="/Assets/avalonia-logo.ico" Title="Devil7.Automation.GSTR.Downloader" Opened="Window_Opened">
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="clr-namespace:Devil7.Automation.GSTR.Downloader.ViewModels;assembly=Devil7.Automation.GSTR.Downloader" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:controls="clr-namespace:Devil7.Automation.GSTR.Downloader.Controls;assembly=Devil7.Automation.GSTR.Downloader" mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="600" x:Class="Devil7.Automation.GSTR.Downloader.Views.MainWindow" Icon="/Assets/avalonia-logo.ico" Title="Devil7.Automation.GSTR.Downloader" Opened="Window_Opened" Width="500" Height="600">
   <Design.DataContext>
     <vm:MainWindowViewModel/>
   </Design.DataContext>
   <Grid>
-    <Grid.ColumnDefinitions>
-      <ColumnDefinition/>
-    </Grid.ColumnDefinitions>
     <Grid.RowDefinitions>
-      <RowDefinition Height="auto"/>
-      <RowDefinition Height="auto"/>
-      <RowDefinition Height="auto"/>
-      <RowDefinition Height="auto"/>
-      <RowDefinition Height="auto"/>
-      <RowDefinition Height="*"/>
-      <RowDefinition Height="auto"/>
+      <RowDefinition/>
+      <RowDefinition/>
     </Grid.RowDefinitions>
-    <Border Grid.Row="0" Grid.Column="0" BorderThickness="1" BorderBrush="Black" CornerRadius="2" Margin="5">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="300"/>
+      <ColumnDefinition />
+    </Grid.ColumnDefinitions>
+    <Grid Grid.Column="0" Grid.Row="0" Grid.RowSpan="2">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition/>
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="auto"/>
+        <RowDefinition Height="auto"/>
+        <RowDefinition Height="auto"/>
+        <RowDefinition Height="auto"/>
+        <RowDefinition Height="auto"/>
+        <RowDefinition Height="*"/>
+        <RowDefinition Height="auto"/>
+      </Grid.RowDefinitions>
+      <Border Grid.Row="0" Grid.Column="0" BorderThickness="1" BorderBrush="Black" CornerRadius="2" Margin="5">
+        <!--Credentials-->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition/>
+          </Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+          </Grid.RowDefinitions>
+          <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Background="Gray" Text="Credentials"/>
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="Username"/>
+          <TextBlock Grid.Row="1" Grid.Column="1" Text=":"/>
+          <TextBox Grid.Row="1" Grid.Column="2" Watermark="Enter Username" Text="{Binding Username}"/>
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="Password"/>
+          <TextBlock Grid.Row="2" Grid.Column="1" Text=":"/>
+          <TextBox Grid.Row="2" Grid.Column="2" Watermark="Enter Password" PasswordChar="*" Text="{Binding Password}"/>
+        </Grid>
+      </Border>
       <!--Credentials-->
-      <Grid>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="auto"/>
-          <ColumnDefinition Width="auto"/>
-          <ColumnDefinition/>
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-          <RowDefinition Height="auto"/>
-          <RowDefinition Height="auto"/>
-          <RowDefinition Height="auto"/>
-        </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Background="Gray" Text="Credentials"/>
-        <TextBlock Grid.Row="1" Grid.Column="0" Text="Username"/>
-        <TextBlock Grid.Row="1" Grid.Column="1" Text=":"/>
-        <TextBox Grid.Row="1" Grid.Column="2" Watermark="Enter Username" Text="{Binding Username}"/>
-        <TextBlock Grid.Row="2" Grid.Column="0" Text="Password"/>
-        <TextBlock Grid.Row="2" Grid.Column="1" Text=":"/>
-        <TextBox Grid.Row="2" Grid.Column="2" Watermark="Enter Password" PasswordChar="*" Text="{Binding Password}"/>
-      </Grid>
-    </Border>
-    <!--Credentials-->
-    <Border Grid.Row="1" Grid.Column="0" BorderThickness="1" BorderBrush="Black" CornerRadius="2" Margin="5">
+      <Border Grid.Row="1" Grid.Column="0" BorderThickness="1" BorderBrush="Black" CornerRadius="2" Margin="5">
+        <!--Captcha-->
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+          </Grid.ColumnDefinitions>
+          <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Background="Gray" Text="Captcha"/>
+          <Image Grid.Row="1" Grid.Column="0" Name="CaptchaImage" Source="{Binding CaptchaImage}" Height="79"/>
+          <TextBox Grid.Row="2" Grid.Column="0" Watermark="Enter Text in Above Image" Text="{Binding Captcha}"/>
+        </Grid>
+      </Border>
       <!--Captcha-->
+      <Button Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right" Width="100" Margin="5" Command="{Binding Authendicate}">Login</Button>
+      <Border Grid.Row="3" Grid.Column="0" BorderThickness="1" BorderBrush="Black" CornerRadius="2" Margin="5">
+        <!--UserDetails-->
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition/>
+          </Grid.ColumnDefinitions>
+          <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Background="Gray" Text="User Details"/>
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="Name"/>
+          <TextBlock Grid.Row="1" Grid.Column="1" Text=":"/>
+          <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding RegisteredName}"/>
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="GSTIN"/>
+          <TextBlock Grid.Row="2" Grid.Column="1" Text=":"/>
+          <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding RegisteredGSTIN}"/>
+        </Grid>
+      </Border>
+      <Border Grid.Row="4" Grid.Column="0" BorderThickness="1" BorderBrush="Black" CornerRadius="2" Margin="5">
+        <!--Return Types-->
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition/>
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+          </Grid.ColumnDefinitions>
+          <TextBlock Grid.Row="0" Grid.Column="0" Background="Gray" Text="Available Returns"/>
+          <TreeView Grid.Row="1" Grid.Column="0" Items="{Binding ReturnsDatas}" MaxHeight="110">
+            <TreeView.DataTemplates>
+              <TreeDataTemplate DataType="{x:Type vm:ReturnsData}" ItemsSource="{Binding FileTypes}">
+                <Grid ColumnDefinitions="Auto, Auto">
+                  <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ReturnName}"/>
+                </Grid>
+              </TreeDataTemplate>
+              <TreeDataTemplate DataType="{x:Type vm:FileType}" ItemsSource="{Binding Operations}">
+                <Grid ColumnDefinitions="Auto, Auto">
+                  <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding FileTypeName}"/>
+                </Grid>
+              </TreeDataTemplate>
+              <DataTemplate DataType="{x:Type vm:ReturnOperation}">
+                <Grid ColumnDefinitions="Auto, Auto">
+                  <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding Value}"/>
+                  <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding OperationName}"/>
+                </Grid>
+              </DataTemplate>
+            </TreeView.DataTemplates>
+          </TreeView>
+        </Grid>
+      </Border>
+      <Border Grid.Row="5" Grid.Column="0" BorderThickness="1" BorderBrush="Black" CornerRadius="2" Margin="5">
+        <!--Return Periods-->
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition/>
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+          </Grid.ColumnDefinitions>
+          <TextBlock Grid.Row="0" Grid.Column="0" Background="Gray" Text="Available Periods"/>
+          <TreeView Grid.Row="1" Grid.Column="0" Items="{Binding ReturnPeriods}">
+            <TreeView.DataTemplates>
+              <TreeDataTemplate DataType="{x:Type vm:YearData}" ItemsSource="{Binding Months}">
+                <Grid ColumnDefinitions="Auto, Auto">
+                  <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding IsChecked}"/>
+                  <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Year}"/>
+                </Grid>
+              </TreeDataTemplate>
+              <DataTemplate DataType="{x:Type vm:MonthData}">
+                <Grid ColumnDefinitions="Auto, Auto">
+                  <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding IsChecked}"/>
+                  <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Month}"/>
+                </Grid>
+              </DataTemplate>
+            </TreeView.DataTemplates>
+          </TreeView>
+        </Grid>
+      </Border>
+      <Button Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right" Width="100" Margin="5" Command="{Binding StartProcess}">Start</Button>
+      <Panel Grid.Row="0" Grid.Column="0" Grid.RowSpan="6" Background="#2A2A2A" Opacity="0.75" IsVisible="{Binding IsBusy}">
+        <controls:BusyIndicator Text="{Binding Status}" IsBusy="{Binding IsBusy}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <Button HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,50" IsVisible="{Binding Cancelable}" Command="{Binding Cancel}">
+          <TextBlock Text="Cancel"/>
+        </Button>
+      </Panel>
+    </Grid>
+
+    <Border Grid.Row="0" Grid.Column="1" BorderThickness="1" BorderBrush="Black" CornerRadius="2" Margin="5">
       <Grid>
-        <Grid.RowDefinitions>
-          <RowDefinition Height="auto"/>
-          <RowDefinition Height="auto"/>
-          <RowDefinition Height="auto"/>
-        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
           <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Background="Gray" Text="Captcha"/>
-        <Image Grid.Row="1" Grid.Column="0" Name="CaptchaImage" Source="{Binding CaptchaImage}" Height="80"/>
-        <TextBox Grid.Row="2" Grid.Column="0" Watermark="Enter Text in Above Image" Text="{Binding Captcha}"/>
-      </Grid>
-    </Border>
-    <!--Captcha-->
-    <Button Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right" Width="100" Margin="5" Command="{Binding Authendicate}">Login</Button>
-    <Border Grid.Row="3" Grid.Column="0" BorderThickness="1" BorderBrush="Black" CornerRadius="2" Margin="5">
-      <!--UserDetails-->
-      <Grid>
         <Grid.RowDefinitions>
           <RowDefinition Height="auto"/>
-          <RowDefinition Height="auto"/>
-          <RowDefinition Height="auto"/>
+          <RowDefinition />
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="auto"/>
-          <ColumnDefinition Width="auto"/>
-          <ColumnDefinition/>
-        </Grid.ColumnDefinitions>
-        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Background="Gray" Text="User Details"/>
-        <TextBlock Grid.Row="1" Grid.Column="0" Text="Name"/>
-        <TextBlock Grid.Row="1" Grid.Column="1" Text=":"/>
-        <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding RegisteredName}"/>
-        <TextBlock Grid.Row="2" Grid.Column="0" Text="GSTIN"/>
-        <TextBlock Grid.Row="2" Grid.Column="1" Text=":"/>
-        <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding RegisteredGSTIN}"/>
+        <TextBlock Grid.Row="0" Grid.Column="0" Background="Gray" Text="Downloads"/>
+        <controls:DownloadManager Name="DownloadManager" Grid.Row="1" Grid.Column="0"/>
       </Grid>
     </Border>
-    <Border Grid.Row="4" Grid.Column="0" BorderThickness="1" BorderBrush="Black" CornerRadius="2" Margin="5">
-      <!--Return Types-->
+
+    <Border Grid.Row="1" Grid.Column="1" BorderThickness="1" BorderBrush="Black" CornerRadius="2" Margin="5">
       <Grid>
-        <Grid.RowDefinitions>
-          <RowDefinition Height="auto"/>
-          <RowDefinition/>
-        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
           <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <TextBlock Grid.Row="0" Grid.Column="0" Background="Gray" Text="Available Returns"/>
-        <TreeView Grid.Row="1" Grid.Column="0" Items="{Binding ReturnsDatas}" MaxHeight="110">
-          <TreeView.DataTemplates>
-            <TreeDataTemplate DataType="{x:Type vm:ReturnsData}" ItemsSource="{Binding FileTypes}">
-              <Grid ColumnDefinitions="Auto, Auto">
-                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ReturnName}"/>
-              </Grid>
-            </TreeDataTemplate>
-            <TreeDataTemplate DataType="{x:Type vm:FileType}" ItemsSource="{Binding Operations}">
-              <Grid ColumnDefinitions="Auto, Auto">
-                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding FileTypeName}"/>
-              </Grid>
-            </TreeDataTemplate>
-            <DataTemplate DataType="{x:Type vm:ReturnOperation}">
-              <Grid ColumnDefinitions="Auto, Auto">
-                <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding Value}"/>
-                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding OperationName}"/>
-              </Grid>
-            </DataTemplate>
-          </TreeView.DataTemplates>
-        </TreeView>
-      </Grid>
-    </Border>
-    <Border Grid.Row="5" Grid.Column="0" BorderThickness="1" BorderBrush="Black" CornerRadius="2" Margin="5">
-      <!--Return Periods-->
-      <Grid>
         <Grid.RowDefinitions>
           <RowDefinition Height="auto"/>
-          <RowDefinition/>
+          <RowDefinition />
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition/>
-        </Grid.ColumnDefinitions>
-        <TextBlock Grid.Row="0" Grid.Column="0" Background="Gray" Text="Available Periods"/>
-        <TreeView Grid.Row="1" Grid.Column="0" Items="{Binding ReturnPeriods}">
-          <TreeView.DataTemplates>
-            <TreeDataTemplate DataType="{x:Type vm:YearData}" ItemsSource="{Binding Months}">
-              <Grid ColumnDefinitions="Auto, Auto">
-                <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding IsChecked}"/>
-                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Year}"/>
-              </Grid>
-            </TreeDataTemplate>
-            <DataTemplate DataType="{x:Type vm:MonthData}">
-              <Grid ColumnDefinitions="Auto, Auto">
-                <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding IsChecked}"/>
-                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Month}"/>
-              </Grid>
-            </DataTemplate>
-          </TreeView.DataTemplates>
-        </TreeView>
+        <TextBlock Grid.Row="0" Grid.Column="0" Background="Gray" Text="Console"/>
+        <ListBox Grid.Row="1" Grid.Column="0" Background="Black"/>
       </Grid>
     </Border>
-    <Button Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right" Width="100" Margin="5" Command="{Binding StartProcess}">Start</Button>
-    <Panel Grid.Row="0" Grid.Column="0" Grid.RowSpan="6" Background="#2A2A2A" Opacity="0.75" IsVisible="{Binding IsBusy}">
-      <controls:BusyIndicator Text="{Binding Status}" IsBusy="{Binding IsBusy}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-      <Button HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,50" IsVisible="{Binding Cancelable}" Command="{Binding Cancel}">
-        <TextBlock Text="Cancel"/>
-      </Button>
-    </Panel>
   </Grid>
 </Window>
