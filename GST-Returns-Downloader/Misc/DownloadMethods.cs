@@ -63,7 +63,7 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
             CommandResult result = new CommandResult(CommandResult.Results.Failed, "Unknown Error");
             try
             {
-                RestRequest request = new RestRequest(string.Format(URLs.Gstr1JsonGenerateForce, monthValue), Method.GET);
+                RestRequest request = new RestRequest(string.Format(URLs.Gstr1JsonGenerateOrDownload, monthValue), Method.GET);
                 request.AddCookie("Lang", "en");
                 request.AddHeader("Referer", URLs.GstrOfflineDownloadURL);
                 RestResponse response = (RestResponse)client.Execute(request);
