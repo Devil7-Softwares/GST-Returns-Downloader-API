@@ -1,16 +1,21 @@
 using System;
+using System.Collections.ObjectModel;
 using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using Devil7.Automation.GSTR.Downloader.Controls;
 using Devil7.Automation.GSTR.Downloader.Misc;
 using Devil7.Automation.GSTR.Downloader.Models;
+using Serilog;
 
 namespace Devil7.Automation.GSTR.Downloader.Views
 {
     public class MainWindow : Window
     {
+        DataGrid dataGrid;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -21,6 +26,7 @@ namespace Devil7.Automation.GSTR.Downloader.Views
             AvaloniaXamlLoader.Load(this);
 
             this.downloadManager = this.FindControl<DownloadManager>("DownloadManager");
+            this.dataGrid = this.FindControl<DataGrid>("dg_Logs");
         }
 
         #region Properties
@@ -68,6 +74,30 @@ namespace Devil7.Automation.GSTR.Downloader.Views
             {
                 await MessageBoxHelper.ShowError(result, this);
             });
+
+            if (dataGrid.Items is ObservableCollection<LogEvent>)
+            {
+                (dataGrid.Items as ObservableCollection<LogEvent>).CollectionChanged += (object collection, System.Collections.Specialized.NotifyCollectionChangedEventArgs ce) => { 
+                    if (ce.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
+                    {
+                        if (Dispatcher.UIThread.CheckAccess())
+                            ScrollToBottom();
+                        else
+                            Dispatcher.UIThread.InvokeAsync(() => ScrollToBottom()); 
+                    }
+                };
+            }
+        }
+        #endregion
+
+        #region PrivateMethods
+        private void ScrollToBottom()
+        {
+            if (dataGrid != null && !dataGrid.IsFocused)
+            {
+                if (dataGrid.Items is ObservableCollection<LogEvent> items && items.Count > 1 && dataGrid.Columns.Count > 0)
+                    dataGrid.ScrollIntoView(items[items.Count - 1], dataGrid.Columns[0]);
+            }
         }
         #endregion
     }
