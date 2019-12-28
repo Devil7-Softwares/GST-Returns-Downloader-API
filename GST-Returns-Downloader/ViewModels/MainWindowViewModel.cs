@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
@@ -506,6 +507,55 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         {
             return Task.Run(() =>
             {
+                if (this.ReturnPeriods == null)
+                {
+                    MessageBoxHelper.Show("Return periods is null. Try after successful login!", "Error");
+                    return;
+                }
+                bool isReturnPeriodSelected = false;
+                foreach (YearData yearData in this.ReturnPeriods)
+                {
+                    foreach (MonthData monthData in yearData.Months)
+                    {
+                        if (monthData.IsChecked)
+                        {
+                            isReturnPeriodSelected = true;
+                            break;
+                        }
+                    }
+                    if (isReturnPeriodSelected)
+                        break;
+                }
+                if (!isReturnPeriodSelected)
+                {
+                    MessageBoxHelper.Show("Please select atleast one month!", "Error");
+                    return;
+                }
+                bool isReturnOperationSelected = false;
+                foreach (ReturnsData returnsData in this.ReturnsDatas)
+                {
+                    foreach (FileType fileType in returnsData.FileTypes)
+                    {
+                        foreach(ReturnOperation returnOperation in fileType.Operations)
+                        {
+                            if (returnOperation.Value)
+                            {
+                                isReturnOperationSelected = true;
+                                break;
+                            }
+                        }
+                        if (isReturnOperationSelected)
+                            break;
+                    }
+                    if (isReturnOperationSelected)
+                        break;
+                }
+                if (!isReturnOperationSelected)
+                {
+                    MessageBoxHelper.Show("No operation selected. Select atleast one operation from Available Returns!", "Error");
+                    return;
+                }
+
                 foreach (YearData year in this.ReturnPeriods)
                 {
                     foreach (MonthData month in year.Months)
