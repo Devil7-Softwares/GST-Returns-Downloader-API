@@ -181,8 +181,8 @@
           <RowDefinition Height="auto"/>
           <RowDefinition />
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0" Grid.Column="0" Background="Gray" Text="Console"/>
-        <ListBox Grid.Row="1" Grid.Column="0" Background="Black"/>
+        <TextBlock Grid.Row="0" Grid.Column="0" Background="Gray" Text="Logs"/>
+        <DataGrid Grid.Row="1" Grid.Column="0" Name="dg_Logs" AutoGenerateColumns="True" Items="{Binding Path=LogEvents}"/>
       </Grid>
     </Border>
   </Grid>

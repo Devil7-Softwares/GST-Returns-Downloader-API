@@ -19,6 +19,7 @@ namespace Devil7.Automation.GSTR.Downloader
         public static AppBuilder BuildAvaloniaApp()
             => AppBuilder.Configure<App>()
                 .UsePlatformDetect()
+                .UseDataGrid()
                 .LogToDebug()
                 .UseReactiveUI();
 
