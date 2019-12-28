@@ -654,9 +654,11 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                         Operations = new ObservableCollection<ReturnOperation>() {
                             new ReturnOperation() {
                                 OperationName = "Generate",
+                                Action = DownloadMethods.GSTR2A_EXCEL_GENERATE
                             },
                             new ReturnOperation() {
                                 OperationName = "Download",
+                                Action = DownloadMethods.GSTR2A_EXCEL_DOWNLOAD
                             }
                         }
                     },
@@ -665,9 +667,11 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                         Operations = new ObservableCollection<ReturnOperation>() {
                             new ReturnOperation() {
                                 OperationName = "Generate",
+                                Action = DownloadMethods.GSTR2A_JSON_GENERATE
                             },
                             new ReturnOperation() {
                                 OperationName = "Download",
+                                Action = DownloadMethods.GSTR2A_JSON_DOWNLOAD
                             }
                         }
                     }
