@@ -364,7 +364,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                         if (authResponse.successCode != "true")
                             Log.Warning("Keep alive request failed!");
                         else
-                            Log.Information("Keep alive request success!");
+                            Log.Verbose("Keep alive request success!");
                     }
                     else
                     {
