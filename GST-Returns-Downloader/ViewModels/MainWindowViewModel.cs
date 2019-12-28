@@ -5,6 +5,7 @@ using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using Devil7.Automation.GSTR.Downloader.Controls;
 using Devil7.Automation.GSTR.Downloader.Misc;
 using Devil7.Automation.GSTR.Downloader.Models;
@@ -531,9 +532,13 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                                                                     {
                                                                         foreach (string url in ((List<string>)result.Data))
                                                                         {
-                                                                            DownloadManager.DownloadItem downloadItem = new DownloadManager.DownloadItem(url, @"D:\");
-                                                                            downloadItem.CustomCookies = Client.CookieContainer.GetCookies(Client.BaseUrl);
-                                                                            downloadManager.Downloads.Add(downloadItem);
+                                                                            Dispatcher.UIThread.InvokeAsync(() =>
+                                                                            {
+                                                                                DownloadManager.DownloadItem downloadItem = new DownloadManager.DownloadItem(url, @"D:\");
+                                                                                downloadItem.CustomCookies = Client.CookieContainer.GetCookies(Client.BaseUrl);
+                                                                                downloadManager.Downloads.Add(downloadItem);
+                                                                                downloadItem.Start.Execute();
+                                                                            });
                                                                         }
                                                                     }
                                                                 }
