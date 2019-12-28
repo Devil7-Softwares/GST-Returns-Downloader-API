@@ -40,10 +40,10 @@
           <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Background="Gray" Text="Credentials"/>
           <TextBlock Grid.Row="1" Grid.Column="0" Text="Username"/>
           <TextBlock Grid.Row="1" Grid.Column="1" Text=":"/>
-          <TextBox Grid.Row="1" Grid.Column="2" Watermark="Enter Username" Text="{Binding Username}"/>
+          <TextBox Grid.Row="1" Grid.Column="2" Name="txt_Username" Watermark="Enter Username" Text="{Binding Username}"/>
           <TextBlock Grid.Row="2" Grid.Column="0" Text="Password"/>
           <TextBlock Grid.Row="2" Grid.Column="1" Text=":"/>
-          <TextBox Grid.Row="2" Grid.Column="2" Watermark="Enter Password" PasswordChar="*" Text="{Binding Password}"/>
+          <TextBox Grid.Row="2" Grid.Column="2" Name="txt_Password" Watermark="Enter Password" PasswordChar="*" Text="{Binding Password}"/>
         </Grid>
       </Border>
       <!--Credentials-->

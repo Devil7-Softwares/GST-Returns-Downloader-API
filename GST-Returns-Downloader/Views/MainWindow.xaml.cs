@@ -15,6 +15,7 @@ namespace Devil7.Automation.GSTR.Downloader.Views
     public class MainWindow : Window
     {
         DataGrid dataGrid;
+        TextBox txtUsername;
 
         public MainWindow()
         {
@@ -27,6 +28,7 @@ namespace Devil7.Automation.GSTR.Downloader.Views
 
             this.downloadManager = this.FindControl<DownloadManager>("DownloadManager");
             this.dataGrid = this.FindControl<DataGrid>("dg_Logs");
+            this.txtUsername = this.FindControl<TextBox>("txt_Username");
         }
 
         #region Properties
@@ -86,6 +88,22 @@ namespace Devil7.Automation.GSTR.Downloader.Views
                             Dispatcher.UIThread.InvokeAsync(() => ScrollToBottom()); 
                     }
                 };
+            }
+
+            if (txtUsername != null)
+            {
+                txtUsername.KeyUp += TxtUsername_KeyUp;
+            }
+        }
+
+        private void TxtUsername_KeyUp(object sender, Avalonia.Input.KeyEventArgs e)
+        {
+            string clipBoardText = Application.Current.Clipboard.GetTextAsync().Result;
+            if (e.Key == Avalonia.Input.Key.V && e.Modifiers == Avalonia.Input.InputModifiers.Control && clipBoardText.Contains("\t"))
+            {
+                e.Handled = true;
+                this.ViewModel.Username = clipBoardText.Split("\t")[0].Trim();
+                this.ViewModel.Password = clipBoardText.Split("\t")[1].Trim();
             }
         }
         #endregion
