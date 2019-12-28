@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using Devil7.Automation.GSTR.Downloader.Models;
 using MessageBox.Avalonia;
 using MessageBox.Avalonia.DTO;
@@ -11,8 +12,15 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
     {
         public static Task Show(string message, string title)
         {
-            var window = new MessageBoxWindow(title, message);
-            return window.Show();
+            if (Dispatcher.UIThread.CheckAccess())
+            {
+                var window = new MessageBoxWindow(title, message);
+                return window.Show();
+            }
+            else
+            {
+                return Dispatcher.UIThread.InvokeAsync(() => Show(message, title));
+            }
         }
 
         public static Task Show(CommandResult result, Window parent = null)
