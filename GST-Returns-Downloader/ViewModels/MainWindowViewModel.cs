@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Devil7.Automation.GSTR.Downloader.Controls;
@@ -23,6 +24,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         {
             this.Random = new Random();
             this.LogEvents = new ObservableCollection<LogEvent>();
+            this.downloadsFolder = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+            this.openFolderDialog = new OpenFolderDialog() { DefaultDirectory = downloadsFolder };
 
             this.InitializeAPI = ReactiveCommand.CreateFromTask<CommandResult>(initializeAPI);
             this.RefreshCaptcha = ReactiveCommand.CreateFromTask<CommandResult>(refreshCaptcha);
@@ -31,6 +34,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
             this.GetMonths = ReactiveCommand.CreateFromTask<CommandResult>(getMonths);
             this.GetUserStatus = ReactiveCommand.CreateFromTask<CommandResult>(getUserStatus);
             this.StartProcess = ReactiveCommand.CreateFromTask(startProcess);
+            this.SelectDownloadsFolder = ReactiveCommand.CreateFromTask<Window>(selectDownloadsFolder);
 
             this.LoadReturnsDatas();
         }
@@ -40,6 +44,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         private Random Random;
         private RestClient Client;
         private DownloadManager downloadManager;
+        private OpenFolderDialog openFolderDialog;
 
         private string username = "";
         private string password = "";
@@ -53,6 +58,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         private ObservableCollection<YearData> returnPeriods;
         private bool cancelable = false;
         private ObservableCollection<ReturnsData> returnsDatas;
+        private string downloadsFolder = "";
         #endregion
 
         #region Properties
@@ -116,6 +122,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         }
 
         public ObservableCollection<LogEvent> LogEvents { get; set; }
+
+        public string DownloadsFolder { get => this.downloadsFolder; set => this.RaiseAndSetIfChanged(ref downloadsFolder, value); }
         #endregion
 
         #region Commands
@@ -534,7 +542,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                                                                         {
                                                                             Dispatcher.UIThread.InvokeAsync(() =>
                                                                             {
-                                                                                DownloadManager.DownloadItem downloadItem = new DownloadManager.DownloadItem(url, @"D:\");
+                                                                                DownloadManager.DownloadItem downloadItem = new DownloadManager.DownloadItem(url, this.DownloadsFolder);
                                                                                 downloadItem.CustomCookies = Client.CookieContainer.GetCookies(Client.BaseUrl);
                                                                                 downloadManager.Downloads.Add(downloadItem);
                                                                                 downloadItem.Start.Execute();
@@ -593,6 +601,19 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                 }
 
                 return value;
+            });
+        }
+
+        public ReactiveCommand<Window, Unit> SelectDownloadsFolder { get; }
+        private Task selectDownloadsFolder(Window parent)
+        {
+            return Task.Run(async () =>
+            {
+                string selectedFolder = await this.openFolderDialog.ShowAsync(parent);
+                if (!string.IsNullOrEmpty(selectedFolder) && System.IO.Directory.Exists(selectedFolder))
+                {
+                    this.DownloadsFolder = selectedFolder;
+                }
             });
         }
         #endregion

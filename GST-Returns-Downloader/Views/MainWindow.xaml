@@ -165,10 +165,18 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
           <RowDefinition Height="auto"/>
+          <RowDefinition Height="auto"/>
           <RowDefinition />
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="0" Grid.Column="0" Background="Gray" Text="Downloads"/>
-        <controls:DownloadManager Name="DownloadManager" Grid.Row="1" Grid.Column="0"/>
+        <Grid Grid.Row="1" Grid.Column="0" ColumnDefinitions="Auto, *, Auto" RowDefinitions="Auto">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="Downloads Folder:"/>
+          <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True" Text="{Binding Path=DownloadsFolder}"/>
+          <Button Grid.Row="0" Grid.Column="2" Command="{Binding SelectDownloadsFolder}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}">
+            <TextBlock Text="..."/>
+          </Button>
+        </Grid>
+        <controls:DownloadManager Name="DownloadManager" Grid.Row="2" Grid.Column="0"/>
       </Grid>
     </Border>
 
