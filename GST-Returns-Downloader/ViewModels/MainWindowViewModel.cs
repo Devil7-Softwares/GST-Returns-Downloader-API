@@ -523,7 +523,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                                         foreach (ReturnsData returns in this.ReturnsDatas)
                                         {
                                             Return returnStatus = user.returns.Find(item => item.return_ty == returns.ReturnName.Replace(" ", ""));
-                                            if (returnStatus != null && returnStatus.status == "FIL" && returnStatus.tileDisable == false)
+                                            if (returnStatus != null && (!returns.CheckFiledStatus || returnStatus.status == "FIL") && returnStatus.tileDisable == false)
                                             {
                                                 foreach (FileType fileType in returns.FileTypes)
                                                 {
@@ -542,7 +542,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                                                                         {
                                                                             Dispatcher.UIThread.InvokeAsync(() =>
                                                                             {
-                                                                                DownloadManager.DownloadItem downloadItem = new DownloadManager.DownloadItem(url, this.DownloadsFolder);
+                                                                                DownloadManager.DownloadItem downloadItem = new DownloadManager.DownloadItem(url, this.DownloadsFolder, string.Format("{0}_{1}_{2}", returns.ReturnName.Replace(" ",""), month.Value, fileType.FileTypeName), true);
                                                                                 downloadItem.CustomCookies = Client.CookieContainer.GetCookies(Client.BaseUrl);
                                                                                 downloadManager.Downloads.Add(downloadItem);
                                                                                 downloadItem.Start.Execute();
@@ -641,6 +641,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
             ReturnsData GSTR1 = new ReturnsData()
             {
                 ReturnName = "GSTR 1",
+                CheckFiledStatus = true,
                 FileTypes = new ObservableCollection<FileType>() {
                     new FileType() {
                         FileTypeName = "PDF",
@@ -669,6 +670,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
             ReturnsData GSTR2A = new ReturnsData()
             {
                 ReturnName = "GSTR 2A",
+                CheckFiledStatus = false,
                 FileTypes = new ObservableCollection<FileType>() {
                     new FileType() {
                         FileTypeName = "Excel",

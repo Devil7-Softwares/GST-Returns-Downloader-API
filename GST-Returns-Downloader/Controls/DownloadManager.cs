@@ -43,11 +43,12 @@ namespace Devil7.Automation.GSTR.Downloader.Controls
         public class DownloadItem : ReactiveObject
         {
             #region Constructor
-            public DownloadItem(string URL, string Path, string FileName = "")
+            public DownloadItem(string URL, string Path, string FileName = "", bool appendExtension = false)
             {
                 this.URL = URL;
                 this.Path = Path;
                 this.FileName = FileName;
+                this.appendExtension = appendExtension;
 
                 this.Start = ReactiveCommand.CreateFromTask(start);
                 this.CustomHeaders = new Dictionary<string, string>();
@@ -59,6 +60,7 @@ namespace Devil7.Automation.GSTR.Downloader.Controls
             #region Variables
             private DateTime statusLastUpdated = DateTime.Now;
             private long sizeWhenLastUpdated = 0;
+            private bool appendExtension = false;
             #endregion
 
             #region Properties
@@ -220,18 +222,29 @@ namespace Devil7.Automation.GSTR.Downloader.Controls
                         // Grab the response from the server for the current WebRequest
                         HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse();
 
+                        string fileNameFromServer = "";
                         if (!String.IsNullOrEmpty(webResponse.Headers["Content-Disposition"]))
                         {
-                            this.FileName = webResponse.Headers["Content-Disposition"].Substring(webResponse.Headers["Content-Disposition"].IndexOf("filename=") + 9).Replace("\"", "");
+                            fileNameFromServer = webResponse.Headers["Content-Disposition"].Substring(webResponse.Headers["Content-Disposition"].IndexOf("filename=") + 9).Replace("\"", "");
                         }
-                        if (String.IsNullOrEmpty(fileName))
+                        if (String.IsNullOrEmpty(fileNameFromServer))
                         {
-                            this.FileName = System.IO.Path.GetFileName(URL);
+                            fileNameFromServer = System.IO.Path.GetFileName(URL);
+                        }
+                        if (fileNameFromServer.Contains("?"))
+                        {
+                            fileNameFromServer = fileNameFromServer.Substring(0, fileNameFromServer.IndexOf("?"));
                         }
 
-                        if (this.FileName.Contains("?"))
+                        if (string.IsNullOrEmpty(this.FileName))
                         {
-                            this.FileName = this.FileName.Substring(0, this.FileName.IndexOf("?"));
+                            this.FileName = fileNameFromServer;
+                        }
+                        if (this.appendExtension)
+                        {
+                            string ext = System.IO.Path.GetExtension(fileNameFromServer);
+                            if (!string.IsNullOrEmpty(ext))
+                                this.FileName = string.Format("{0}{1}", this.FileName, ext);
                         }
 
                         TotalSize = webResponse.ContentLength;

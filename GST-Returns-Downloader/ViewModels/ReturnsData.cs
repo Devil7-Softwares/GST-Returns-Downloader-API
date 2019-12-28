@@ -95,6 +95,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
     {
         #region Variables
         private string returnName = "";
+        private bool checkFiledStatus = false;
         private ObservableCollection<FileType> fileTypes;
         #endregion
 
@@ -104,6 +105,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
             get => returnName;
             set => this.RaiseAndSetIfChanged(ref returnName, value);
         }
+
+        public bool CheckFiledStatus { get => checkFiledStatus; set => this.RaiseAndSetIfChanged(ref checkFiledStatus, value); }
         public ObservableCollection<FileType> FileTypes
         {
             get => fileTypes;
