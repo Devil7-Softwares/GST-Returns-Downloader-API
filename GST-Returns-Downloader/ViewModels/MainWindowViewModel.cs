@@ -20,6 +20,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         public MainWindowViewModel()
         {
             this.Random = new Random();
+            this.LogEvents = new ObservableCollection<LogEvent>();
 
             this.InitializeAPI = ReactiveCommand.CreateFromTask<CommandResult>(initializeAPI);
             this.RefreshCaptcha = ReactiveCommand.CreateFromTask<CommandResult>(refreshCaptcha);
@@ -111,6 +112,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
             get => returnsDatas;
             set => this.RaiseAndSetIfChanged(ref returnsDatas, value);
         }
+        public ObservableCollection<LogEvent> LogEvents { get; set; }
         #endregion
 
         #region Commands

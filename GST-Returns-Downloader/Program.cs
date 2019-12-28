@@ -1,8 +1,10 @@
 ﻿using System;
 using Avalonia;
 using Avalonia.Logging.Serilog;
+using Devil7.Automation.GSTR.Downloader.Misc;
 using Devil7.Automation.GSTR.Downloader.ViewModels;
 using Devil7.Automation.GSTR.Downloader.Views;
+using Serilog;
 
 namespace Devil7.Automation.GSTR.Downloader
 {
@@ -24,10 +26,19 @@ namespace Devil7.Automation.GSTR.Downloader
         // container, etc.
         private static void AppMain(Application app, string[] args)
         {
+            MainWindowViewModel viewModel = new MainWindowViewModel();
+
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console()
+                .WriteTo.ObservableCollectionSink(viewModel.LogEvents)
+                .CreateLogger();
+
             var window = new MainWindow
             {
-                DataContext = new MainWindowViewModel(),
+                DataContext = viewModel
             };
+
+            Log.Verbose("Starting Application...");
 
             app.Run(window);
         }
