@@ -83,7 +83,7 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
                             else if (returnResponse.data.status == 0 && returnResponse.data.url != null && returnResponse.data.url.Count > 0)
                             {
                                 result.Result = CommandResult.Results.Success;
-                                result.Message = string.Format("{0} Downlaod Request Successful: {1}", returnName, monthValue);
+                                result.Message = string.Format("{0} Download Request Successful: {1}", returnName, monthValue);
                                 result.Data = returnResponse.data.url;
                                 Log.Information(result.Message);
                             }

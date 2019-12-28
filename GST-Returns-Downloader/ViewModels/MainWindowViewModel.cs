@@ -523,37 +523,55 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                                         foreach (ReturnsData returns in this.ReturnsDatas)
                                         {
                                             Return returnStatus = user.returns.Find(item => item.return_ty == returns.ReturnName.Replace(" ", ""));
-                                            if (returnStatus != null && (!returns.CheckFiledStatus || returnStatus.status == "FIL") && returnStatus.tileDisable == false)
+                                            if (returnStatus != null)
                                             {
-                                                foreach (FileType fileType in returns.FileTypes)
+                                                if ((!returns.CheckFiledStatus || returnStatus.status == "FIL"))
                                                 {
-                                                    foreach (ReturnOperation operation in fileType.Operations)
+                                                    if (returnStatus.tileDisable == false)
                                                     {
-                                                        if (operation.Value)
+                                                        foreach (FileType fileType in returns.FileTypes)
                                                         {
-                                                            if (operation.Action != null)
+                                                            foreach (ReturnOperation operation in fileType.Operations)
                                                             {
-                                                                CommandResult result = operation.Action(Client, month.Value);
-                                                                if (result.Result == CommandResult.Results.Success)
+                                                                if (operation.Value)
                                                                 {
-                                                                    if (result.Data is List<string>)
+                                                                    if (operation.Action != null)
                                                                     {
-                                                                        foreach (string url in ((List<string>)result.Data))
+                                                                        CommandResult result = operation.Action(Client, month.Value);
+                                                                        if (result.Result == CommandResult.Results.Success)
                                                                         {
-                                                                            Dispatcher.UIThread.InvokeAsync(() =>
+                                                                            if (result.Data is List<string>)
                                                                             {
-                                                                                DownloadManager.DownloadItem downloadItem = new DownloadManager.DownloadItem(url, this.DownloadsFolder, string.Format("{0}_{1}_{2}", returns.ReturnName.Replace(" ",""), month.Value, fileType.FileTypeName), true);
-                                                                                downloadItem.CustomCookies = Client.CookieContainer.GetCookies(Client.BaseUrl);
-                                                                                downloadManager.Downloads.Add(downloadItem);
-                                                                                downloadItem.Start.Execute();
-                                                                            });
+                                                                                foreach (string url in ((List<string>)result.Data))
+                                                                                {
+                                                                                    Dispatcher.UIThread.InvokeAsync(() =>
+                                                                                    {
+                                                                                        DownloadManager.DownloadItem downloadItem = new DownloadManager.DownloadItem(url, this.DownloadsFolder, string.Format("{0}_{1}_{2}", returns.ReturnName.Replace(" ", ""), month.Value, fileType.FileTypeName), true);
+                                                                                        downloadItem.CustomCookies = Client.CookieContainer.GetCookies(Client.BaseUrl);
+                                                                                        downloadManager.Downloads.Add(downloadItem);
+                                                                                        downloadItem.Start.Execute();
+                                                                                    });
+                                                                                }
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
                                                             }
                                                         }
                                                     }
+                                                    else
+                                                    {
+                                                        Log.Warning("{0} Return Status for Month {1} is Disabled!", returns.ReturnName.Replace(" ", ""), month.Value);
+                                                    }
                                                 }
+                                                else
+                                                {
+                                                    Log.Warning("Unable to Request Generate/Download. {0} Not Filed for Month {1}", returns.ReturnName.Replace(" ", ""), month.Value);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Log.Warning("Unable to Find {0} Return Status for Month {1}", returns.ReturnName.Replace(" ", ""), month.Value);
                                             }
                                         }
                                     }
