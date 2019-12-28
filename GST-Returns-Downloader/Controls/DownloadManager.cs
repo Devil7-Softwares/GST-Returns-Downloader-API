@@ -40,7 +40,7 @@ namespace Devil7.Automation.GSTR.Downloader.Controls
         public class DownloadItem : ReactiveObject
         {
             #region Constructor
-            public DownloadItem(string URL, string Path, string FileName = null)
+            public DownloadItem(string URL, string Path, string FileName = "")
             {
                 this.URL = URL;
                 this.Path = Path;
@@ -48,6 +48,8 @@ namespace Devil7.Automation.GSTR.Downloader.Controls
 
                 this.Start = ReactiveCommand.CreateFromTask(start);
                 this.CustomHeaders = new Dictionary<string, string>();
+
+                Log.Verbose("Creating Download Item URL: {0}, Path: {1}, FileName: {3}", url, path, FileName);
             }
             #endregion
 
@@ -249,7 +251,7 @@ namespace Devil7.Automation.GSTR.Downloader.Controls
                     }
                     catch (Exception ex)
                     {
-                        throw new NotImplementedException();
+                        Log.Error(ex, "Error on downloading. File: '{2}', URL: '{0}', Path: '{1}'", URL, Path, FileName);
                     }
                     finally
                     {

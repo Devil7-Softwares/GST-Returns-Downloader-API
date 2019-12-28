@@ -2,6 +2,7 @@ using System;
 using Devil7.Automation.GSTR.Downloader.Models;
 using Newtonsoft.Json;
 using RestSharp;
+using Serilog;
 
 namespace Devil7.Automation.GSTR.Downloader.Misc
 {
@@ -23,36 +24,35 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
                     {
                         if (returnResponse.data != null && returnResponse.data.status == 1)
                         {
-                            string Message = "Generate Request Successful: " + monthValue;
-                            Console.WriteLine(Message);
-                            result.Message = Message;
+                            result.Message = "Generate Request Successful: " + monthValue;
                             result.Result = CommandResult.Results.Success;
+                            Log.Information(result.Message);
                         }
                         else if (returnResponse.error != null)
                         {
                             if (returnResponse.error.errorCode == "RTN_24")
                             {
-                                string Message = "File Generation is Already In Progress: " + monthValue;
-                                Console.WriteLine(Message);
-                                result.Message = Message;
+                                result.Message = "File Generation is Already In Progress: " + monthValue;
                                 result.Result = CommandResult.Results.Success;
+                                Log.Warning(result.Message);
                             }
                             else
                             {
-                                Console.WriteLine(returnResponse.error.detailMessage);
                                 result.Message = returnResponse.error.detailMessage;
+                                Log.Warning(result.Message);
                             }
                         }
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Request Error on GSTR1 JSON Generate!");
+
+                    Log.Error("Request Error on GSTR1 JSON Generate!");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error on GSTR1 JSON Generate! " + ex.Message);
+                Log.Error(ex, "Error on GSTR1 JSON Generate! " + ex.Message);
             }
 
             return result;
@@ -76,45 +76,42 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
                         {
                             if (returnResponse.data.status == 1)
                             {
-                                string Message = "Generate Request Not Given Previously, Given Now: " + monthValue;
-                                Console.WriteLine(Message);
-                                result.Message = Message;
+                                result.Message = "Generate Request Not Given Previously, Given Now: " + monthValue;
+                                Log.Warning(result.Message);
                             }
                             else if (returnResponse.data.status == 0 && returnResponse.data.url != null && returnResponse.data.url.Count > 0)
                             {
-                                string Message = "GSTR1 Downlaod Request Successful: " + monthValue;
-                                Console.WriteLine(Message);
                                 result.Result = CommandResult.Results.Success;
-                                result.Message = Message;
+                                result.Message = "GSTR1 Downlaod Request Successful: " + monthValue;
                                 result.Data = returnResponse.data.url;
+                                Log.Information(result.Message);
                             }
                         }
                         else if (returnResponse.error != null)
                         {
                             if (returnResponse.error.errorCode == "RTN_24")
                             {
-                                string Message = "File Generation is In Progress: " + monthValue;
-                                Console.WriteLine(Message);
-                                result.Message = Message;
+                                result.Message = "File Generation is In Progress: " + monthValue;
                                 result.Result = CommandResult.Results.Success;
+                                Log.Warning(result.Message);
                             }
                             else
                             {
-                                Console.WriteLine(returnResponse.error.detailMessage);
                                 result.Message = returnResponse.error.detailMessage;
                                 result.Result = CommandResult.Results.Failed;
+                                Log.Warning(result.Message);
                             }
                         }
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Request Error on GSTR1 JSON Download!");
+                    Log.Error("Request Error on GSTR1 JSON Download!");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error on GSTR1 JSON Download! " + ex.Message);
+                Log.Error(ex, "Error on GSTR1 JSON Download! " + ex.Message);
             }
 
             return result;

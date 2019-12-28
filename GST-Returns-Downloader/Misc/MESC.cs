@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -21,10 +22,10 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
             {
                 long endTime = getTime();
                 long elapsedTime = endTime - calibrationStartTime;
-                Console.WriteLine("MESC stopRun --- updating mescValue with elapsed " + elapsedTime);
+                Log.Debug("MESC stopRun --- updating mescValue with elapsed " + elapsedTime);
                 MESC.mescValue = MESC.mescValue + ";ldi=" + elapsedTime;
             }
-            catch (Exception e) { Console.WriteLine(e.Message); }
+            catch (Exception e) { Log.Debug(e, e.Message); }
         }
         private static int calculateMESC()
         {
@@ -41,8 +42,7 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
             }
             catch (Exception e)
             {
-                Console.WriteLine("Error: Unable to invoke MESC method");
-                Console.WriteLine("Error: " + e.Message);
+                Log.Debug(e, "Error: Unable to invoke MESC method");
             }
             return num_iter;
         }
@@ -60,7 +60,7 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
                 }
                 average = Math.Round(total / numberOfSamples);
             }
-            catch (Exception e) { Console.WriteLine(e.Message); }
+            catch (Exception e) { Log.Debug(e, "Failed to getAverageMESC"); }
             return average;
         }
 
@@ -80,7 +80,7 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
                     MESC.mescIterationCount += 1;
                 }
             }
-            catch (Exception e) { Console.WriteLine(e.Message); }
+            catch (Exception e) { Log.Debug(e, "Failed in newCollectMESCFunc"); }
         }
         public static string getMESC()
         {
@@ -91,7 +91,7 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
                 MESC.newCollectMESCFunc();
                 mesc = MESC.mescValue;
             }
-            catch (Exception e) { Console.WriteLine(e.Message); }
+            catch (Exception e) { Log.Debug(e, "Failed to getMESC."); }
             return mesc;
         }
 

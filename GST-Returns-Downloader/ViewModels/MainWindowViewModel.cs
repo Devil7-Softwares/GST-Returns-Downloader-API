@@ -11,6 +11,7 @@ using Devil7.Automation.GSTR.Downloader.Models;
 using Newtonsoft.Json;
 using ReactiveUI;
 using RestSharp;
+using Serilog;
 
 namespace Devil7.Automation.GSTR.Downloader.ViewModels
 {
@@ -112,6 +113,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
             get => returnsDatas;
             set => this.RaiseAndSetIfChanged(ref returnsDatas, value);
         }
+
         public ObservableCollection<LogEvent> LogEvents { get; set; }
         #endregion
 
@@ -142,21 +144,21 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                     RestResponse InitialResponse = (RestResponse)Client.Execute(InitialRequest);
                     if (InitialResponse.IsSuccessful)
                     {
-                        Console.WriteLine("Initialization successful!");
+                        Log.Information("Initialization successful!");
                         this.RefreshCaptcha.Execute().Subscribe();
                     }
                     else
                     {
-                        Console.WriteLine(InitialResponse.ErrorMessage);
                         result.Result = CommandResult.Results.Failed;
                         result.Message = "Unable to initialize API. " + InitialResponse.ErrorMessage;
+                        Log.Error(result.Message);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Error on initializing API: " + ex.Message);
                     result.Result = CommandResult.Results.Failed;
                     result.Message = "Unable to initialize API. " + ex.Message;
+                    Log.Error(result.Message);
                 }
                 finally
                 {
@@ -191,20 +193,20 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                     if (CaptchaResponse.IsSuccessful)
                     {
                         this.CaptchaImage = new Bitmap(new System.IO.MemoryStream(CaptchaResponse.RawBytes));
-                        Console.WriteLine("Captcha Request Successful!");
+                        Log.Information("Captcha Request Successful!");
                     }
                     else
                     {
-                        Console.WriteLine(CaptchaResponse.ErrorMessage);
                         result.Result = CommandResult.Results.Failed;
                         result.Message = "Captcha failed to load! " + CaptchaResponse.ErrorMessage;
+                        Log.Error(result.Message);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Error on refreshing captcha: " + ex.Message);
                     result.Result = CommandResult.Results.Failed;
                     result.Message = "Captcha failed to load! " + ex.Message;
+                    Log.Error(ex, result.Message);
                 }
                 finally
                 {
@@ -240,65 +242,58 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                         Models.AuthResponse authResponse = JsonConvert.DeserializeObject<Models.AuthResponse>(AuthendicateResponse1.Content);
                         if (authResponse.message != "auth")
                         {
-                            Console.Write("Authendication Phase 1 Failed! ");
+                            Log.Debug("Authendication Phase 1 Failed!");
                             result.Result = CommandResult.Results.Failed;
                             result.Message = "Login failed. ";
 
                             switch (authResponse.errorCode)
                             {
                                 case "SWEB_9006":
-                                    Console.WriteLine("Server Busy!");
                                     result.Message += "Server busy!";
                                     break;
                                 case "AUTH_9033":
-                                    Console.WriteLine("Password has expired!");
                                     result.Message += "Password has expired!";
                                     break;
                                 case "AUTH_9033_MIG":
-                                    Console.WriteLine("Password has expired (Mirgration)!");
                                     result.Message += "Password has expired (Migration)!";
                                     break;
                                 case "SWEB_9000":
                                 case "SWEB_9034":
-                                    Console.WriteLine("Invalid Captcha!");
                                     result.Message += "Invalid captcha!";
                                     RefreshCaptcha.Execute().Subscribe();
                                     break;
                                 case "SWEB_9036":
-                                    Console.WriteLine("Invalid R0 user!");
                                     result.Message += "Invalid user!";
                                     break;
                                 case "AUTH_9002":
-                                    Console.WriteLine("Invalid Username or Password!");
                                     result.Message += "Invalid username or password!";
                                     RefreshCaptcha.Execute().Subscribe();
                                     break;
                                 case "SWEB_9014":
-                                    Console.WriteLine("System Error!");
                                     result.Message += "System error!";
                                     break;
                                 case "SWEB_8000":
-                                    Console.WriteLine("Too Many (3) Wrong Attempts! Account Locked!");
                                     result.Message += "Too many (3) wrong attempts! Account locked!";
                                     break;
                             }
                         }
                         else
                         {
-                            Console.WriteLine("Authendication Phase 1 Successful!");
+                            Log.Debug("Authendication Phase 1 Successful!");
                         }
                     }
                     else
                     {
-                        Console.WriteLine("Authendication Phase 1 Request Unsuccessful!");
+                        Log.Debug("Authendication Phase 1 Request Unsuccessful!");
                         result.Result = CommandResult.Results.Failed;
                         result.Message = "Login request failed! Unknown network error!";
                     }
 
                     if (result.Result == CommandResult.Results.Failed)
+                    {
+                        Log.Error(result.Message);
                         return result;
-
-
+                    }
 
                     RestRequest AuthendicateRequest2 = new RestRequest(URLs.Auth, Method.GET);
                     AuthendicateRequest2.AddCookie("Lang", "en");
@@ -307,7 +302,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                     RestResponse AuthendicateResponse2 = (RestResponse)Client.Execute(AuthendicateRequest2);
                     if (!AuthendicateResponse2.IsSuccessful)
                     {
-                        Console.WriteLine("Authendication Phase 2 Request Unsucessful!");
+                        Log.Debug("Authendication Phase 2 Request Unsucessful!");
                         result.Result = CommandResult.Results.Failed;
                         result.Message = "Login request failed! Unknown network error!";
                     }
@@ -321,7 +316,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Error on authendicating: " + ex.Message);
+                    Log.Error(ex, "Login failed!");
                     result.Result = CommandResult.Results.Failed;
                     result.Message = "Login failed! " + ex.Message;
                 }
@@ -329,6 +324,9 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                 {
                     this.IsBusy = false;
                 }
+
+                if (result.Result == CommandResult.Results.Success)
+                    Log.Information(result.Message);
 
                 return result;
             });
@@ -364,21 +362,18 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                         Models.AuthResponse authResponse = JsonConvert.DeserializeObject<Models.AuthResponse>(KeepAliveResponse.Content);
 
                         if (authResponse.successCode != "true")
-                            Console.WriteLine("Keep alive request failed!");
+                            Log.Warning("Keep alive request failed!");
                         else
-                            Console.WriteLine("Keep alive request success!");
-
-
-
+                            Log.Information("Keep alive request success!");
                     }
                     else
                     {
-                        Console.WriteLine("Keep alive request failed!");
+                        Log.Warning("Keep alive request failed!");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Error on keep alive request: " + ex.Message);
+                    Log.Warning("Error on keep alive request: " + ex.Message);
                 }
             });
         }
@@ -415,25 +410,27 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                                 ReturnPeriods.Add(new YearData(year));
                             }
                             this.ReturnPeriods = ReturnPeriods;
-                            Console.WriteLine("Get Months Successful.");
+                            Log.Information("Get Months Successful.");
                         }
                         else
                         {
                             result.Result = CommandResult.Results.Failed;
                             result.Message = "Get Months Request Status Failed!";
+                            Log.Error(result.Message);
                         }
                     }
                     else
                     {
                         result.Result = CommandResult.Results.Failed;
                         result.Message = "Get Months Request Failed!";
+                        Log.Error(result.Message);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Get Months Failed. " + ex.Message);
                     result.Message = "Get Months Failed." + ex.Message;
                     result.Result = CommandResult.Results.Failed;
+                    Log.Error(ex, result.Message);
                 }
                 finally
                 {
@@ -472,18 +469,16 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                     }
                     else
                     {
-                        string errorMessage = "Get UserStatus Request Failed!";
-                        Console.WriteLine(errorMessage);
-                        result.Message = errorMessage;
+                        result.Message = "Get UserStatus Request Failed!";
                         result.Result = CommandResult.Results.Failed;
+                        Log.Error(result.Message);
                     }
                 }
                 catch (Exception ex)
                 {
-                    string errorMessage = "Get UserStatus Failed!" + ex.Message;
-                    Console.WriteLine(errorMessage);
-                    result.Message = errorMessage;
+                    result.Message = "Get UserStatus Failed!" + ex.Message;
                     result.Result = CommandResult.Results.Failed;
+                    Log.Error(ex, result.Message);
                 }
                 finally
                 {
@@ -580,12 +575,12 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                     }
                     else
                     {
-                        Console.WriteLine("Error on RoleStatus Request for " + monthValue);
+                        Log.Error("Error on RoleStatus Request for " + monthValue);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Fetch RoleStatus Failed!. " + ex.Message);
+                    Log.Error(ex, "Fetch RoleStatus Failed!. " + ex.Message);
                 }
                 finally
                 {
