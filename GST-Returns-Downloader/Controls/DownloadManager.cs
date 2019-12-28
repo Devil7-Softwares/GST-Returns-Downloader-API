@@ -22,15 +22,18 @@ namespace Devil7.Automation.GSTR.Downloader.Controls
         public static string UserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36";
         #endregion
 
+        #region Constructor
+        public DownloadManager()
+        {
+            this.Items = new ObservableCollection<DownloadItem>();
+        }
+        #endregion
+
         #region Properties
         public ObservableCollection<DownloadItem> Downloads
         {
             get
             {
-                if (this.Items == null || !(this.Items is ObservableCollection<DownloadItem>))
-                {
-                    this.Items = new ObservableCollection<DownloadItem>();
-                }
                 return this.Items as ObservableCollection<DownloadItem>;
             }
         }
@@ -224,6 +227,11 @@ namespace Devil7.Automation.GSTR.Downloader.Controls
                         if (String.IsNullOrEmpty(fileName))
                         {
                             this.FileName = System.IO.Path.GetFileName(URL);
+                        }
+
+                        if (this.FileName.Contains("?"))
+                        {
+                            this.FileName = this.FileName.Substring(0, this.FileName.IndexOf("?"));
                         }
 
                         TotalSize = webResponse.ContentLength;
