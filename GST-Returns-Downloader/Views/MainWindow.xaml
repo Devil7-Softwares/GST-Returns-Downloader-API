@@ -112,7 +112,7 @@
               </TreeDataTemplate>
               <DataTemplate DataType="{x:Type vm:ReturnOperation}">
                 <Grid ColumnDefinitions="Auto, Auto">
-                  <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding Value}"/>
+                  <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding Value}" IsEnabled="{Binding Enabled}"/>
                   <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding OperationName}"/>
                 </Grid>
               </DataTemplate>

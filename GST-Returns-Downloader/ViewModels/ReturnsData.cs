@@ -30,6 +30,10 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
             get;
             set;
         }
+        public bool Enabled
+        {
+            get => this.Action != null;
+        }
         #endregion
     }
     public class FileType : ReactiveObject
