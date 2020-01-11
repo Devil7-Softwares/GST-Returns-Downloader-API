@@ -22,6 +22,7 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
         public const string RoleStatus = "/returns/auth/api/rolestatus?rtn_prd={0}";
         public const string GstrReturnGenerateOrDownload = "/returns/auth/api/offline/download/generate?{0}flag={1}&rtn_prd={2}&rtn_typ={3}";
         public const string Gstr1Data = "/returns/auth/api/gstr1/summary?rtn_prd={0}";
+        public const string UserRegDetails = "/returns/auth/api/gstr1/userdetails?ctin={0}";
         #endregion
 
         #region FullURLs

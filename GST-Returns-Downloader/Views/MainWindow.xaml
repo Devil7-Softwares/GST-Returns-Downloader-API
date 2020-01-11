@@ -72,6 +72,7 @@
             <RowDefinition Height="auto"/>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
           </Grid.RowDefinitions>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="auto"/>
@@ -79,12 +80,15 @@
             <ColumnDefinition/>
           </Grid.ColumnDefinitions>
           <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Background="Gray" Text="User Details"/>
-          <TextBlock Grid.Row="1" Grid.Column="0" Text="Name"/>
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="Registered Name"/>
           <TextBlock Grid.Row="1" Grid.Column="1" Text=":"/>
           <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding RegisteredName}"/>
-          <TextBlock Grid.Row="2" Grid.Column="0" Text="GSTIN"/>
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="Trade Name"/>
           <TextBlock Grid.Row="2" Grid.Column="1" Text=":"/>
-          <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding RegisteredGSTIN}"/>
+          <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding TradeName}"/>
+          <TextBlock Grid.Row="3" Grid.Column="0" Text="GSTIN"/>
+          <TextBlock Grid.Row="3" Grid.Column="1" Text=":"/>
+          <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding RegisteredGSTIN}"/>
         </Grid>
       </Border>
       <Border Grid.Row="4" Grid.Column="0" BorderThickness="1" BorderBrush="Black" CornerRadius="2" Margin="5">

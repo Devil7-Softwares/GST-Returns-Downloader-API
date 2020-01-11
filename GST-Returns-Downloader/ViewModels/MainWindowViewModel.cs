@@ -56,6 +56,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         private string captcha = "";
         private string registeredName = "";
         private string registeredGSTIN = "";
+        private string tradeName = "";
         private bool isBusy = false;
         private string status = "";
         private ObservableCollection<YearData> returnPeriods;
@@ -95,6 +96,11 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         {
             get => registeredGSTIN;
             set => this.RaiseAndSetIfChanged(ref registeredGSTIN, value);
+        }
+        public string TradeName
+        {
+            get => tradeName;
+            set => this.RaiseAndSetIfChanged(ref tradeName, value);
         }
 
         public bool IsBusy
@@ -470,14 +476,36 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
 
                     UpdateURL(URLs.ReturnsURL);
 
-                    RestRequest request = new RestRequest(URLs.UserStatus, Method.GET);
-                    request.AddHeader("Referer", URLs.DashboardURL);
-                    RestResponse response = (RestResponse)Client.Execute(request);
-                    if (response.IsSuccessful)
+                    RestRequest requestStatus = new RestRequest(URLs.UserStatus, Method.GET);
+                    requestStatus.AddHeader("Referer", URLs.DashboardURL);
+                    RestResponse responseStatus = (RestResponse)Client.Execute(requestStatus);
+                    if (responseStatus.IsSuccessful)
                     {
-                        UserStatus userStatus = JsonConvert.DeserializeObject<UserStatus>(response.Content);
+                        UserStatus userStatus = JsonConvert.DeserializeObject<UserStatus>(responseStatus.Content);
                         this.RegisteredGSTIN = userStatus.gstin;
                         this.RegisteredName = userStatus.bname;
+                        
+                        RestRequest requestDetails = new RestRequest(string.Format(URLs.UserRegDetails, userStatus.gstin), Method.GET);
+                        requestDetails.AddHeader("Referer", URLs.Gstr1URL);
+                        RestResponse responseDetails = (RestResponse)Client.Execute(requestDetails);
+                        if (responseDetails.IsSuccessful)
+                        {
+                            UserRegDetails userRegDetails = JsonConvert.DeserializeObject<UserRegDetails>(responseDetails.Content);
+                            if (userRegDetails.status == 1 && userRegDetails.data != null)
+                            {
+                                this.TradeName = userRegDetails.data.regName;
+                            }
+                            else
+                            {
+                                Log.Warning("No data in UserRegDetails!");
+                            }
+                        }
+                        else
+                        {
+                            result.Message = "Get UserRegDetails Request Failed!";
+                            result.Result = CommandResult.Results.Failed;
+                            Log.Error(result.Message);
+                        }
                     }
                     else
                     {
