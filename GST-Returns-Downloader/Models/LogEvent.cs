@@ -8,14 +8,14 @@ namespace Devil7.Automation.GSTR.Downloader.Models
         #region Constructor
         public LogEvent(DateTimeOffset Time, LogEventLevel Level, string Message)
         {
-            this.Time = Time;
+            this.Time = Time.ToString();
             this.Message = Message;
             this.Level = Level;
         }
         #endregion
 
         #region Properties
-        public DateTimeOffset Time { get; }
+        public String Time { get; }
         public LogEventLevel Level { get; }
         public string Message { get; }
         #endregion
