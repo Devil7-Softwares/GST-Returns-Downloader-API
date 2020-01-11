@@ -14,7 +14,8 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
         {
             if (Dispatcher.UIThread.CheckAccess())
             {
-                var window = new MessageBoxWindow(title, message);
+                
+                var window = MessageBoxManager.GetMessageBoxStandardWindow(title, message);
                 return window.Show();
             }
             else
@@ -25,9 +26,9 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
 
         public static Task Show(CommandResult result, Window parent = null)
         {
-            var window = new MessageBoxWindow(new MessageBoxParams
+            var window = MessageBoxManager.GetMessageBoxStandardWindow(new MessageBoxStandardParams
             {
-                Button = ButtonEnum.Ok,
+                ButtonDefinitions = ButtonEnum.Ok,
                 ContentTitle = (result.Result == CommandResult.Results.Success ? "Done" : "Failed"),
                 ContentMessage = result.Message,
                 Icon = (result.Result == CommandResult.Results.Success ? Icon.Success : Icon.Error),
@@ -47,9 +48,9 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
         {
             if (result.Result == CommandResult.Results.Failed)
             {
-                var window = new MessageBoxWindow(new MessageBoxParams
+                var window = MessageBoxManager.GetMessageBoxStandardWindow(new MessageBoxStandardParams
                 {
-                    Button = ButtonEnum.Ok,
+                    ButtonDefinitions = ButtonEnum.Ok,
                     ContentTitle = "Error",
                     ContentMessage = result.Message,
                     Icon = Icon.Error,
