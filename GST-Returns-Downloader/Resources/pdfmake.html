@@ -1,0 +1,419 @@
+<html>
+<head>
+    <script src="https://static.gst.gov.in/uiassets/javascripts/fwk/pdfmake.min.1.1.js"></script>
+    <script src="https://static.gst.gov.in/uiassets/javascripts/fwk/vfs_fonts.js"></script>
+    <script type="text/javascript">
+        // Generates GSTR1 preview pdf from json data
+        // status - Filing status (FIL/NF)
+        // gstin - GST Number
+        // rtn_prd - Return period (122019)
+        // finyr - Financial year (2019-20)
+        // retprd - Return period month (December)
+        // bus_name - Registered name
+        // trade_name - trade_name
+        // gt - Aggregate turnover in preceding financial year
+        // cur_gt - Aggregate turnover apr to june 2019 financial year
+        function generateGSTR1PDF(response, status, gstin, rtn_prd, finyr, retprd, bus_name, trade_name, gt, cur_gt) {
+            response = JSON.parse(response);
+            var gstr1SumData = response.data;
+            var sumryData = gstr1SumData.sec_sum;
+            for (var i = 0; i < sumryData.length; i++) {
+                if (sumryData[i].sec_nm == 'B2B') {
+                    var sec_name = sumryData[i].sec_nm;
+                    pdfb2b = b2bdat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'B2BA') {
+                    pdfb2ba = b2badat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'CDNRA') {
+                    pdfcdnra = cdnadat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'CDNR') {
+                    pdfcdnr = cdnrdat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'CDNUR') {
+                    pdfcdnur = cdnurdat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'CDNURA') {
+                    pdfcdnura = cdnuradat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'B2CLA') {
+                    pdfb2cla = b2cladat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'B2CL') {
+                    pdfb2cl = b2cldat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'B2CSA') {
+                    pdfb2csa = b2csadat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'B2CS') {
+                    pdfb2cs = b2csdat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'NIL') {
+                    pdfnil = nildat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'EXP') {
+                    pdfexp = expdat = sumryData[i];
+                }
+                /*   else if (sumryData[i].sec_nm == 'EXPWP') {
+                    expwdat = sumryData[i];
+                }  */
+                else if (sumryData[i].sec_nm == 'EXPA') {
+                    pdfexpa = expadat = sumryData[i];
+                }
+                /* else if (sumryData[i].sec_nm == 'EXPWPA') {
+                    expawdat = sumryData[i];
+                } */
+                else if (sumryData[i].sec_nm == 'ATA') {
+                    pdfata = atadat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'TXPD') {
+                    pdftxpd = txpdat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'TXPDA') {
+                    pdftxpda = txpadat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'AT') {
+                    pdfat = attdat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'HSN') {
+                    pdfhsn = hsndat = sumryData[i];
+                } else if (sumryData[i].sec_nm == 'DOC_ISSUE') {
+                    pdfdoc = docdat = sumryData[i];
+                }
+            }
+
+            var pdfname = 'GSTR1_' + gstin + '_' + rtn_prd;
+            var text = "DRAFT";
+            if (status === 'FRZ' || status === 'FIL') {
+                var text = "FINAL"
+            }
+            var dd = {
+                pageSize: 'A4',
+                pageOrientation: 'landscape',
+                pageMargin: [40, 60, 40, 60],
+                watermark: { text: text, color: 'black', opacity: 0.3, bold: true, italics: false, fontSize: 20 },
+                content: [
+                    {
+                        text: 'Form GSTR-1',
+                        style: 'header'
+                    },
+                    {
+                        text: '[See rule (59(1)]',
+                        style: 'rule'
+                    },
+
+                    {
+                        text: 'Details of outward supplies of goods or services',
+                        style: 'center'
+                    },
+                    {
+                        style: 'retprd',
+                        table: {
+                            widths: ['30%', 'auto'],
+                            body: [
+                                ['Year', finyr],
+                                ['Month', retprd],
+
+                            ]
+                        }
+                    },
+                    {
+                        style: 'tableExample',
+                        table: {
+                            widths: ['65%', 'auto'],
+                            body: [
+                                ['1. GSTIN', gstin || '-'],
+                                ['2(a). Legal name of the registered person', bus_name || '-'],
+                                ['2(b). Trade name, if any', trade_name || '-'],
+                                ['3(a). Aggregate Turnover in the preceding Financial Year', gt || '-'],
+                                ['3(b). Aggregate Turnover - April to June, 2017 ', cur_gt || '-'],
+                            ]
+                        }
+                    },
+                    {
+                        text: '4A, 4B, 4C, 6B, 6C - B2B Invoices',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax', 'Total Central Tax', 'Total State/UT  Tax', 'Total Cess'],
+                                [pdfb2b.ttl_rec, pdfb2b.ttl_val, pdfb2b.ttl_tax, pdfb2b.ttl_igst, pdfb2b.ttl_cgst, pdfb2b.ttl_sgst, pdfb2b.ttl_cess]
+                            ]
+                        }
+                    }, {
+                        text: '5A, 5B - B2C (Large) Invoices',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax', 'Total Cess'],
+                                [pdfb2cl.ttl_rec, pdfb2cl.ttl_val, pdfb2cl.ttl_tax, pdfb2cl.ttl_igst, pdfb2cl.ttl_cess]
+                            ]
+                        }
+                    }, {
+                        text: '9B - Credit / Debit Notes (Registered)',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax', 'Total Central Tax', 'Total State/UT  Tax', 'Total Cess'],
+                                [pdfcdnr.ttl_rec, pdfcdnr.ttl_val, pdfcdnr.ttl_tax, pdfcdnr.ttl_igst, pdfcdnr.ttl_cgst, pdfcdnr.ttl_sgst, pdfcdnr.ttl_cess]
+                            ]
+                        }
+                    }, {
+                        text: '9B - Credit / Debit Notes (Unregistered)',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax', 'Total Cess'],
+                                [pdfcdnur.ttl_rec, pdfcdnur.ttl_val, pdfcdnur.ttl_tax, pdfcdnur.ttl_igst, pdfcdnur.ttl_cess]
+                            ]
+                        }
+                    }, {
+                        text: '6A - Exports Invoices',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax'],
+                                [pdfexp.ttl_rec, pdfexp.ttl_val, pdfexp.ttl_tax, pdfexp.ttl_igst]
+                            ]
+                        }
+                    }, {
+                        text: '7 - B2C (Others)',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax', 'Total Central Tax', 'Total State/UT  Tax', 'Total Cess'],
+                                [pdfb2cs.ttl_rec, pdfb2cs.ttl_val, pdfb2cs.ttl_tax, pdfb2cs.ttl_igst, pdfb2cs.ttl_cgst, pdfb2cs.ttl_sgst, pdfb2cs.ttl_cess]
+                            ]
+                        }
+                    }, {
+                        text: '8 - Nil rated, exempted and non GST outward supplies',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Nil amount', 'Total Exempted amount', 'Total Non-GST Amount'],
+                                [pdfnil.ttl_rec, pdfnil.ttl_nilsup_amt, pdfnil.ttl_expt_amt, pdfnil.ttl_ngsup_amt]
+                            ]
+                        }
+                    }, {
+                        text: '11A(1), 11A(2) - Tax Liability (Advances Received)',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax', 'Total Central Tax', 'Total State/UT  Tax', 'Total Cess'],
+                                [pdfat.ttl_rec, pdfat.ttl_val, pdfat.ttl_tax, pdfat.ttl_igst, pdfat.ttl_cgst, pdfat.ttl_sgst, pdfat.ttl_cess]
+                            ]
+                        }
+                    },
+                    {
+                        text: '11B(1), 11B(2) - Adjustment of Advances', pageBreak: 'before',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax', 'Total Central Tax', 'Total State/UT  Tax', 'Total Cess'],
+                                [pdftxpd.ttl_rec, pdftxpd.ttl_val, pdftxpd.ttl_tax, pdftxpd.ttl_igst, pdftxpd.ttl_cgst, pdftxpd.ttl_sgst, pdftxpd.ttl_cess]
+                            ]
+                        }
+                    },
+                    {
+                        text: '12 - HSN-wise summary of outward supplies',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax', 'Total Central Tax', 'Total State/UT  Tax', 'Total Cess'],
+                                [pdfhsn.ttl_rec, pdfhsn.ttl_val, pdfhsn.ttl_tax, pdfhsn.ttl_igst, pdfhsn.ttl_cgst, pdfhsn.ttl_sgst, pdfhsn.ttl_cess]
+                            ]
+                        }
+                    },
+                    {
+                        text: '13 - Documents Issued',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Documents Issued', 'Documents Cancelled', 'Net issued Documents'],
+                                [docdat.ttl_rec, docdat.ttl_doc_issued, docdat.ttl_doc_cancelled, docdat.net_doc_issued]
+                            ]
+                        }
+                    },
+                    {
+                        text: '9A - Amended B2B Invoices',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax', 'Total Central Tax', 'Total State/UT  Tax', 'Total Cess'],
+                                [pdfb2ba.ttl_rec, pdfb2ba.ttl_val, pdfb2ba.ttl_tax, pdfb2ba.ttl_igst, pdfb2ba.ttl_cgst, pdfb2ba.ttl_sgst, pdfb2ba.ttl_cess]
+                            ]
+                        }
+                    },
+                    {
+                        text: '9A - Amended B2C (Large) Invoices',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax', 'Total Cess'],
+                                [pdfb2cla.ttl_rec, pdfb2cla.ttl_val, pdfb2cla.ttl_tax, pdfb2cla.ttl_igst, pdfb2cla.ttl_cess]
+                            ]
+                        }
+                    },
+                    {
+                        text: '9C - Amended Credit/Debit Notes (Registered)', pageBreak: 'before',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax', 'Total Central Tax', 'Total State/UT  Tax', 'Total Cess'],
+                                [pdfcdnra.ttl_rec, pdfcdnra.ttl_val, pdfcdnra.ttl_tax, pdfcdnra.ttl_igst, pdfcdnra.ttl_cgst, pdfcdnra.ttl_sgst, pdfcdnra.ttl_cess]
+                            ]
+                        }
+                    },
+                    {
+                        text: '9C - Amended Credit/Debit Notes (Unregistered)',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax', 'Total Cess'],
+                                [pdfcdnura.ttl_rec, pdfcdnura.ttl_val, pdfcdnura.ttl_tax, pdfcdnura.ttl_igst, pdfcdnura.ttl_cess]
+                            ]
+                        }
+                    },
+                    {
+                        text: '9A - Amended Exports Invoices',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax'],
+                                [pdfexpa.ttl_rec, pdfexpa.ttl_val, pdfexpa.ttl_tax, pdfexpa.ttl_igst]
+                            ]
+                        }
+                    },
+                    {
+                        text: '10 - Amended B2C(Others)',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax', 'Total Central Tax', 'Total State/UT  Tax', 'Total Cess'],
+                                [pdfb2csa.ttl_rec, pdfb2csa.ttl_val, pdfb2csa.ttl_tax, pdfb2csa.ttl_igst, pdfb2csa.ttl_cgst, pdfb2csa.ttl_sgst, pdfb2csa.ttl_cess]
+                            ]
+                        }
+                    },
+                    {
+                        text: '11A - Amended Tax Liability (Advance Received)', pageBreak: 'before',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax', 'Total Central Tax', 'Total State/UT  Tax', 'Total Cess'],
+                                [pdfata.ttl_rec, pdfata.ttl_val, pdfata.ttl_tax, pdfata.ttl_igst, pdfata.ttl_cgst, pdfata.ttl_sgst, pdfata.ttl_cess]
+                            ]
+                        }
+                    },
+                    {
+                        text: '11B - Amendment of Adjustment of Advances',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                ['No. of Records', 'Total Invoice value', 'Total Taxable value', 'Total Integrated Tax', 'Total Central Tax', 'Total State/UT  Tax', 'Total Cess'],
+                                [pdftxpda.ttl_rec, pdftxpda.ttl_val, pdftxpda.ttl_tax, pdftxpda.ttl_igst, pdftxpda.ttl_cgst, pdftxpda.ttl_sgst, pdftxpda.ttl_cess]
+                            ]
+                        }
+                    }
+                ],
+                styles: {
+                    header: {
+                        fontSize: 18,
+                        bold: true,
+                        margin: [300, 0, 0, 10]
+                    },
+                    subheader: {
+                        fontSize: 16,
+                        bold: true,
+                        margin: [0, 10, 0, 5]
+                    },
+                    tableExample: {
+                        margin: [0, 5, 0, 15]
+                    },
+                    retprd: {
+                        margin: [470, 0, 0, 10]
+                    },
+                    center: {
+                        margin: [220, 0, 0, 10]
+                    },
+                    tableHeader: {
+                        bold: true,
+                        fontSize: 13,
+                        color: 'black'
+                    },
+                    rule: {
+                        margin: [315, 0, 0, 10]
+                    }
+                }
+
+            }
+
+            //pdfMake.createPdf(dd).download(pdfname);
+            //pdfMake.createPdf(dd).open({}, window);
+            pdfMake.createPdf(dd).getBase64((data) => {
+                console.log("PDF:" + pdfname + ":" + data);
+            });
+        }
+    </script>
+</head>
+</html>
