@@ -484,7 +484,9 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                         UserStatus userStatus = JsonConvert.DeserializeObject<UserStatus>(responseStatus.Content);
                         this.RegisteredGSTIN = userStatus.gstin;
                         this.RegisteredName = userStatus.bname;
-                        
+                        this.pdfMaker.GSTIN = userStatus.gstin;
+                        this.pdfMaker.RegisteredName = userStatus.bname;
+
                         RestRequest requestDetails = new RestRequest(string.Format(URLs.UserRegDetails, userStatus.gstin), Method.GET);
                         requestDetails.AddHeader("Referer", URLs.Gstr1URL);
                         RestResponse responseDetails = (RestResponse)Client.Execute(requestDetails);
@@ -494,6 +496,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                             if (userRegDetails.status == 1 && userRegDetails.data != null)
                             {
                                 this.TradeName = userRegDetails.data.regName;
+                                this.pdfMaker.TradeName = userRegDetails.data.regName;
                             }
                             else
                             {
