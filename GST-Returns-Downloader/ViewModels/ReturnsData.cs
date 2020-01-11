@@ -42,6 +42,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         public FileType()
         {
             this.PropertyChanged += FileType_PropertyChanged;
+            this.CheckFiledStatus = false;
+            this.SubmittedIsEnough = false;
         }
         #endregion
 
@@ -64,6 +66,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                 this.RaiseAndSetIfChanged(ref operations, value);
             }
         }
+        public bool CheckFiledStatus { get; set; }
+        public bool SubmittedIsEnough { get; set; }
         #endregion
 
         #region Events
@@ -99,7 +103,6 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
     {
         #region Variables
         private string returnName = "";
-        private bool checkFiledStatus = false;
         private ObservableCollection<FileType> fileTypes;
         #endregion
 
@@ -110,7 +113,6 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
             set => this.RaiseAndSetIfChanged(ref returnName, value);
         }
 
-        public bool CheckFiledStatus { get => checkFiledStatus; set => this.RaiseAndSetIfChanged(ref checkFiledStatus, value); }
         public ObservableCollection<FileType> FileTypes
         {
             get => fileTypes;

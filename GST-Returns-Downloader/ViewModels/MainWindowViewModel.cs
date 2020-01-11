@@ -605,11 +605,11 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                                             Return returnStatus = user.returns.Find(item => item.return_ty == returns.ReturnName.Replace(" ", ""));
                                             if (returnStatus != null)
                                             {
-                                                if ((!returns.CheckFiledStatus || returnStatus.status == "FIL"))
+                                                if (returnStatus.tileDisable == false)
                                                 {
-                                                    if (returnStatus.tileDisable == false)
+                                                    foreach (FileType fileType in returns.FileTypes)
                                                     {
-                                                        foreach (FileType fileType in returns.FileTypes)
+                                                        if ((!fileType.CheckFiledStatus || returnStatus.status == "FIL" || (fileType.SubmittedIsEnough && returnStatus.status == "FRZ")))
                                                         {
                                                             foreach (ReturnOperation operation in fileType.Operations)
                                                             {
@@ -645,20 +645,20 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                                                                 }
                                                             }
                                                         }
-                                                    }
-                                                    else
-                                                    {
-                                                        Log.Warning("{0} Return Status for Month {1} is Disabled!", returns.ReturnName.Replace(" ", ""), month.Value);
+                                                        else
+                                                        {
+                                                            Log.Warning("Unable to Request Generate/Download. {0} Not Filed for Month {1}", returns.ReturnName.Replace(" ", ""), month.Value);
+                                                        }
                                                     }
                                                 }
                                                 else
                                                 {
-                                                    Log.Warning("Unable to Request Generate/Download. {0} Not Filed for Month {1}", returns.ReturnName.Replace(" ", ""), month.Value);
+                                                    Log.Warning("{0} Return Status for Month {1} is Disabled!", returns.ReturnName.Replace(" ", ""), month.Value);
                                                 }
                                             }
                                             else
                                             {
-                                                Log.Warning("Unable to Find {0} Return Status for Month {1}", returns.ReturnName.Replace(" ", ""), month.Value);
+                                                Log.Verbose("Unable to Find {0} Return Status for Month {1}", returns.ReturnName.Replace(" ", ""), month.Value);
                                             }
                                         }
                                     }
@@ -746,10 +746,11 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
             ReturnsData GSTR1 = new ReturnsData()
             {
                 ReturnName = "GSTR 1",
-                CheckFiledStatus = true,
                 FileTypes = new ObservableCollection<FileType>() {
                     new FileType() {
                         FileTypeName = "PDF",
+                        CheckFiledStatus = true,
+                        SubmittedIsEnough = true,
                         Operations = new ObservableCollection<ReturnOperation>() {
                             new ReturnOperation() {
                                 OperationName = "Download",
@@ -759,6 +760,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                     },
                     new FileType() {
                         FileTypeName = "JSON",
+                        CheckFiledStatus = true,
                         Operations = new ObservableCollection<ReturnOperation>() {
                             new ReturnOperation() {
                                 OperationName = "Generate",
@@ -776,7 +778,6 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
             ReturnsData GSTR2A = new ReturnsData()
             {
                 ReturnName = "GSTR 2A",
-                CheckFiledStatus = false,
                 FileTypes = new ObservableCollection<FileType>() {
                     new FileType() {
                         FileTypeName = "Excel",
