@@ -20,6 +20,9 @@ namespace Devil7.Automation.GSTR.Downloader.Views
         public MainWindow()
         {
             InitializeComponent();
+#if DEBUG
+            this.AttachDevTools();
+#endif
         }
 
         private void InitializeComponent()

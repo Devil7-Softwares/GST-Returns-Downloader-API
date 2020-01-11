@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <RootNamespace>Devil7.Automation.GSTR.Downloader</RootNamespace>
     <ApplicationIcon>icon.ico</ApplicationIcon>
   </PropertyGroup>
@@ -15,10 +15,10 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="0.8.3" />
-    <PackageReference Include="Avalonia.Controls.DataGrid" Version="0.8.3" />
-    <PackageReference Include="Avalonia.Desktop" Version="0.8.3" />
-    <PackageReference Include="Avalonia.ReactiveUI" Version="0.8.3" />
+    <PackageReference Include="Avalonia" Version="0.9.1" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="0.9.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="0.9.1" />
+    <PackageReference Include="Avalonia.ReactiveUI" Version="0.9.1" />
     <PackageReference Include="MessageBox.Avalonia" Version="0.8.3" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="RestSharp" Version="106.6.10" />

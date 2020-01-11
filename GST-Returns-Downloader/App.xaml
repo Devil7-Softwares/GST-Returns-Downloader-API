@@ -13,6 +13,6 @@
     <StyleInclude Source="avares://Devil7.Automation.GSTR.Downloader/Controls/BusyIndicator.xaml"/>
     <StyleInclude Source="avares://Devil7.Automation.GSTR.Downloader/Controls/DownloadManager.xaml"/>
 
-    <StyleInclude Source="resm:Avalonia.Controls.DataGrid.Themes.Default.xaml?assembly=Avalonia.Controls.DataGrid"/>
+    <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Default.xaml"/>
   </Application.Styles>
 </Application>
