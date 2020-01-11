@@ -120,6 +120,46 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
         #endregion
 
         #region Public Methods
+        public static CommandResult GSTR1_PDF_DOWNLOAD(RestClient client, string monthValue)
+        {
+            CommandResult result = new CommandResult(CommandResult.Results.Failed, "Unknown Error");
+            try
+            {
+                RestRequest request = new RestRequest(string.Format(URLs.Gstr1Data, monthValue), Method.GET);
+                request.AddCookie("Lang", "en");
+                request.AddHeader("Referer", URLs.Gstr1URL);
+                RestResponse response = (RestResponse)client.Execute(request);
+                if (response.IsSuccessful)
+                {
+                    ReturnDataGSTR1 returnResponse = JsonConvert.DeserializeObject<ReturnDataGSTR1>(response.Content);
+                    if (returnResponse != null)
+                    {
+                        if (returnResponse.data != null && returnResponse.status == 1)
+                        {
+                            result.Message = "GSTR1 Data Request Successful: " + monthValue;
+                            result.Result = CommandResult.Results.Success;
+                            result.Data = response.Content;
+                            Log.Information(result.Message);
+                        }
+                        else
+                        {
+                            Log.Error("GSTR1 Status is 0");
+                        }
+                    }
+                }
+                else
+                {
+
+                    Log.Error(string.Format("Request Error on GSTR1 PDF Download!"));
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, string.Format("Error on GSTR1 PDF Download! {0}", ex.Message));
+            }
+            return result;
+        }
+
         public static CommandResult GSTR1_JSON_GENERATE(RestClient client, string monthValue)
         {
             return GSTR_GENERATE(client, monthValue, FileTypes.JSON, "GSTR1");
@@ -148,7 +188,7 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
         public static CommandResult GSTR2A_EXCEL_DOWNLOAD(RestClient client, string monthValue)
         {
             return GSTR_DOWNLOAD(client, monthValue, FileTypes.EXCEL, "GSTR2A");
-        } 
+        }
         #endregion
 
         #region Enums

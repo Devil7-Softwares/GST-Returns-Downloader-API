@@ -27,6 +27,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
             this.LogEvents = new ObservableCollection<LogEvent>();
             this.downloadsFolder = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
             this.openFolderDialog = new OpenFolderDialog() { DefaultDirectory = downloadsFolder };
+            this.pdfMaker = new PDFMakeWrapper(DownloadsFolder);
 
             this.InitializeAPI = ReactiveCommand.CreateFromTask<CommandResult>(initializeAPI);
             this.RefreshCaptcha = ReactiveCommand.CreateFromTask<CommandResult>(refreshCaptcha);
@@ -46,6 +47,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         private RestClient Client;
         private DownloadManager downloadManager;
         private OpenFolderDialog openFolderDialog;
+        private PDFMakeWrapper pdfMaker;
 
         private string username = "";
         private string password = "";
@@ -536,7 +538,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                 {
                     foreach (FileType fileType in returnsData.FileTypes)
                     {
-                        foreach(ReturnOperation returnOperation in fileType.Operations)
+                        foreach (ReturnOperation returnOperation in fileType.Operations)
                         {
                             if (returnOperation.Value)
                             {
@@ -601,6 +603,13 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                                                                                         downloadManager.Downloads.Add(downloadItem);
                                                                                         downloadItem.Start.Execute();
                                                                                     });
+                                                                                }
+                                                                            }
+                                                                            else if (result.Data is string)
+                                                                            {
+                                                                                if (returns.ReturnName == "GSTR 1")
+                                                                                {
+                                                                                    pdfMaker.GenerateGSTR1(result.Data.ToString(), month.Value, returnStatus.status).Wait();
                                                                                 }
                                                                             }
                                                                         }
@@ -716,6 +725,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                         Operations = new ObservableCollection<ReturnOperation>() {
                             new ReturnOperation() {
                                 OperationName = "Download",
+                                Action = DownloadMethods.GSTR1_PDF_DOWNLOAD
                             }
                         }
                     },

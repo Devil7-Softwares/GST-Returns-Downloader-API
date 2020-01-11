@@ -21,6 +21,7 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
         public const string UserStatus = "/services/api/ustatus";
         public const string RoleStatus = "/returns/auth/api/rolestatus?rtn_prd={0}";
         public const string GstrReturnGenerateOrDownload = "/returns/auth/api/offline/download/generate?{0}flag={1}&rtn_prd={2}&rtn_typ={3}";
+        public const string Gstr1Data = "/returns/auth/api/gstr1/summary?rtn_prd={0}";
         #endregion
 
         #region FullURLs
@@ -28,6 +29,7 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
         public const string LoginURL = "https://services.gst.gov.in/services/login";
         public const string DashboardURL = "https://return.gst.gov.in/returns/auth/dashboard";
         public const string GstrOfflineDownloadURL = "https://return.gst.gov.in/returns/auth/gstr/offlinedownload";
+        public const string Gstr1URL = "https://return.gst.gov.in/returns/auth/gstr1";
         #endregion
     }
 }
