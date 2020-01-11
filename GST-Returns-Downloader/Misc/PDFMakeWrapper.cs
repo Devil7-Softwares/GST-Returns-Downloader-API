@@ -59,11 +59,11 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
             int month = 0;
             if (monthValue.Length != 6 || !Int32.TryParse(monthValue.Substring(0,2), out month) || !Int32.TryParse(monthValue.Substring(2, 4), out year))
             {
-                return string.Format("{0}-{1}", month > 3 ? year : year -1, (month > 3 ? year + 1 : year).ToString().Substring(2,2));
+                return "";
             }
             else
             {
-                return "";
+                return string.Format("{0}-{1}", month > 3 ? year : year -1, (month > 3 ? year + 1 : year).ToString().Substring(2,2));
             }
         }
 
@@ -72,11 +72,11 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
             int month = 0;
             if (monthValue.Length != 6 || !Int32.TryParse(monthValue.Substring(0, 2), out month))
             {
-                return CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(month);
+                return "";
             }
             else
             {
-                return "";
+                return CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(month);
             }
         }
         #endregion
