@@ -643,6 +643,11 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                                                                                     pdfMaker.GenerateGSTR1(result.Data.ToString(), month.Value, returnStatus.status).Wait();
                                                                                 }
                                                                             }
+                                                                            else if (result.Data is ReturnDataGSTR3B)
+                                                                            {
+                                                                                ReturnDataGSTR3B data = (ReturnDataGSTR3B)result.Data;
+                                                                                pdfMaker.GenerateGSTR3B(data.formDetailsContent, data.summaryContent, data.taxPayableContent, month.Value, returnStatus.status).Wait();
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
@@ -817,9 +822,11 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                 FileTypes = new ObservableCollection<FileType>() {
                     new FileType() {
                         FileTypeName = "PDF",
+                        CheckFiledStatus = true,
                         Operations = new ObservableCollection<ReturnOperation>() {
                             new ReturnOperation() {
                                 OperationName = "Download",
+                                Action = DownloadMethods.GSTR3B_PDF_DOWNLOAD
                             }
                         }
                     }
