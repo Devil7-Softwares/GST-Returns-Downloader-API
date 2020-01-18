@@ -1,5 +1,6 @@
-<html>
+﻿<html>
 <head>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://static.gst.gov.in/uiassets/javascripts/fwk/pdfmake.min.1.1.js"></script>
     <script src="https://static.gst.gov.in/uiassets/javascripts/fwk/vfs_fonts.js"></script>
     <script type="text/javascript">
@@ -410,6 +411,1390 @@
 
             //pdfMake.createPdf(dd).download(pdfname);
             //pdfMake.createPdf(dd).open({}, window);
+            pdfMake.createPdf(dd).getBase64((data) => {
+                console.log("PDF:" + pdfname + ":" + data);
+            });
+        }
+
+        var gstr3bScope = {};
+        function generateGSTR3BPDF(gstin, rtn_prd, status, gstr3bSummaryData, taxPayableData, formDetailsData) {
+            gstr3bSummaryData = JSON.parse(gstr3bSummaryData);
+            taxPayableData = JSON.parse(taxPayableData);
+            formDetailsData = JSON.parse(formDetailsData);
+
+            gstr3bSummary = gstr3bSummaryData.data;
+            taxPayableResponse = taxPayableData;
+            formDetails = formDetailsData.data;
+
+            // Calculate Summary
+            gstr3bScope.totalItx_iosup = 0.0, gstr3bScope.totalCtx_iosup = 0.0, gstr3bScope.totalStx_iosup = 0.0, gstr3bScope.totalCs_iosup = 0.0;
+            gstr3bScope.totalTxVal_intersup = 0.0, gstr3bScope.totalItx_intersup = 0.0;
+            gstr3bScope.totalItx_elgITC = 0.0, gstr3bScope.totalCtx_elgITC = 0.0, gstr3bScope.totalStx_elgITC = 0.0, gstr3bScope.totalCs_elgITC = 0.0;
+            gstr3bScope.totalTxInterSS_inwsup = 0.0, gstr3bScope.totalIntraSS_inwsup = 0.0;
+            gstr3bScope.totalItx_interestLtfee = 0.0, gstr3bScope.totalCtx_interestLtfee = 0.0, gstr3bScope.totalStx_interestLtfee = 0.0, gstr3bScope.totalCs_interestLtfee = 0.0;
+            gstr3bScope.totalTxlib_pmt = 0.0, gstr3bScope.totalCashpd_pmt = 0.0, gstr3bScope.totalITCpd_pmt = 0.0;
+            gstr3bScope.totalItx_tdstcs = 0.0, gstr3bScope.totalCtx_tdstcs = 0.0, gstr3bScope.totalStx_tdstcs = 0.0;
+            //3.1
+            if (gstr3bSummary.sup_details) {
+                gstr3bScope.totalItx_iosup = parseFloat(gstr3bSummary.sup_details.osup_det.iamt)
+                    + parseFloat(gstr3bSummary.sup_details.osup_zero.iamt)
+                    + parseFloat(gstr3bSummary.sup_details.isup_rev.iamt);
+                gstr3bScope.totalCtx_iosup = parseFloat(gstr3bSummary.sup_details.osup_det.camt)
+                    + parseFloat(gstr3bSummary.sup_details.isup_rev.camt);
+                gstr3bScope.totalStx_iosup = parseFloat(gstr3bSummary.sup_details.osup_det.samt)
+                    + parseFloat(gstr3bSummary.sup_details.isup_rev.samt);
+                gstr3bScope.totalCs_iosup = parseFloat(gstr3bSummary.sup_details.osup_det.csamt)
+                    + parseFloat(gstr3bSummary.sup_details.osup_zero.csamt)
+                    + parseFloat(gstr3bSummary.sup_details.isup_rev.csamt);
+            }
+
+            //3.2
+            if (gstr3bSummary.inter_sup) {
+                gstr3bScope.totalTxVal_intersup = 0.0, gstr3bScope.totalItx_intersup = 0.0;
+                $.each(gstr3bSummary.inter_sup, function (value, key) {
+                    //console.log(key + ': ' + value);
+                    if (!value.empty) {
+                        $.each(value, function (val, label) {
+                            gstr3bScope.totalTxVal_intersup = gstr3bScope.totalTxVal_intersup + parseFloat(val.txval);
+                            gstr3bScope.totalItx_intersup = gstr3bScope.totalItx_intersup + parseFloat(val.iamt);
+                        });
+                    }
+                });
+            }
+
+            //4
+            gstr3bScope.totalItx_elgITC = 0.0, gstr3bScope.totalCtx_elgITC = 0.0, gstr3bScope.totalStx_elgITC = 0.0, gstr3bScope.totalCs_elgITC = 0.0;
+            $.each(gstr3bSummary.itc_elg, function (val, key) {
+                if (key == 'itc_avl') {
+                    $.each(val, function (obj) {
+                        gstr3bScope.totalItx_elgITC += parseFloat(obj.iamt);
+                        gstr3bScope.totalCtx_elgITC += parseFloat(obj.camt);
+                        gstr3bScope.totalStx_elgITC += parseFloat(obj.samt);
+                        gstr3bScope.totalCs_elgITC += parseFloat(obj.csamt);
+                    });
+                } else if (key == 'itc_rev') {
+                    $.each(val, function (obj) {
+                        gstr3bScope.totalItx_elgITC -= parseFloat(obj.iamt);
+                        gstr3bScope.totalCtx_elgITC -= parseFloat(obj.camt);
+                        gstr3bScope.totalStx_elgITC -= parseFloat(obj.samt);
+                        gstr3bScope.totalCs_elgITC -= parseFloat(obj.csamt);
+                    });
+                }
+            });
+
+            //5
+            if (gstr3bSummary.inward_sup) {
+                gstr3bScope.totalTxInterSS_inwsup = 0.0, gstr3bScope.totalIntraSS_inwsup = 0.0;
+                $.each(gstr3bSummary.inward_sup.isup_details, function (obj) {
+                    gstr3bScope.totalTxInterSS_inwsup += parseFloat(obj.inter);
+                    gstr3bScope.totalIntraSS_inwsup += parseFloat(obj.intra);
+                });
+            }
+
+            //5.1
+            if (gstr3bSummary.intr_ltfee) {
+                var intr_iamt = 0.0, intr_camt = 0.0, intr_samt = 0.0, intr_csamt = 0.0, fee_camt = 0.0, fee_samt = 0.0;
+                if (gstr3bSummary.intr_ltfee.intr_details) {
+                    intr_iamt = parseFloat(gstr3bSummary.intr_ltfee.intr_details.iamt || 0.0);
+                    intr_camt = parseFloat(gstr3bSummary.intr_ltfee.intr_details.camt || 0.0);
+                    intr_samt = parseFloat(gstr3bSummary.intr_ltfee.intr_details.samt || 0.0);
+                    intr_csamt = parseFloat(gstr3bSummary.intr_ltfee.intr_details.csamt || 0.0);
+                }
+                if (gstr3bSummary.intr_ltfee.ltfee_details) {
+                    fee_camt = parseFloat(gstr3bSummary.intr_ltfee.ltfee_details.camt || 0.0);
+                    fee_samt = parseFloat(gstr3bSummary.intr_ltfee.ltfee_details.samt || 0.0);
+                }
+
+                gstr3bScope.totalItx_interestLtfee = intr_iamt;
+                gstr3bScope.totalCtx_interestLtfee = intr_camt + fee_camt;
+                gstr3bScope.totalStx_interestLtfee = intr_samt + fee_samt;
+                gstr3bScope.totalCs_interestLtfee = intr_csamt;
+            }
+
+            //6
+            gstr3bScope.totalTxlib_pmt = 0.0;
+            gstr3bScope.totalCashpd_pmt = 0.0;
+            gstr3bScope.totalITCpd_pmt = 0.0;
+            if (gstr3bSummary.tt_val) {
+                gstr3bScope.totalTxlib_pmt = parseFloat(gstr3bSummary.tt_val.tt_pay);
+                gstr3bScope.totalCashpd_pmt = parseFloat(gstr3bSummary.tt_val.tt_csh_pd);
+                gstr3bScope.totalITCpd_pmt = parseFloat(gstr3bSummary.tt_val.tt_itc_pd);
+            }
+
+            //downlaodPdf
+            gstr3bScope.osupTaxvl = 0.0,
+                gstr3bScope.osupIamt = 0.0,
+                gstr3bScope.osupCamt = 0.0,
+                gstr3bScope.osupSamt = 0.0,
+                gstr3bScope.osupCsamt = 0.0,
+                gstr3bScope.osupZeroRatedTxval = 0.0,
+                gstr3bScope.osupZeroRatedIamt = 0.0,
+                gstr3bScope.osupZeroRatedCsamt = 0.0,
+                gstr3bScope.osupNilTxval = 0.0,
+                gstr3bScope.isupRevTxval = 0.0,
+                gstr3bScope.isupRevIamt = 0.0,
+                gstr3bScope.isupRevCamt = 0.0,
+                gstr3bScope.isupRevSamt = 0.0,
+                gstr3bScope.isupRevCsamt = 0.0,
+                gstr3bScope.isupNongstTxval = 0.0,
+                gstr3bScope.intrestIamt = 0.0,
+                gstr3bScope.intrestCamt = 0.0,
+                gstr3bScope.intrestSamt = 0.0,
+                gstr3bScope.intrestCsamt = 0.0,
+                gstr3bScope.lateFeeCamt = 0.0,
+                gstr3bScope.lateFeeSamt = 0.0,
+                gstr3bScope.interSupUnregTotalTax = 0.0,
+                gstr3bScope.interSupUnregIntTax = 0.0,
+                gstr3bScope.interSupCompTotalTax = 0.0,
+                gstr3bScope.interSupCompIntTax = 0.0,
+                gstr3bScope.intersupUINTotalTax = 0.0,
+                gstr3bScope.intersupUINIntTax = 0.0,
+                gstr3bScope.avITCIamt = 0.0,
+                gstr3bScope.avITCCamt = 0.0,
+                gstr3bScope.avITCSamt = 0.0,
+                gstr3bScope.avITCCsamt = 0.0,
+                gstr3bScope.revITCIamt = 0.0,
+                gstr3bScope.revITCCamt = 0.0,
+                gstr3bScope.revITCSamt = 0.0,
+                gstr3bScope.revITCCsamt = 0.0,
+                gstr3bScope.netITCIamt = 0.0,
+                gstr3bScope.netITCCamt = 0.0,
+                gstr3bScope.netITCSamt = 0.0,
+                gstr3bScope.netITCCsamt = 0.0,
+                gstr3bScope.inlgITCIamt = 0.0,
+                gstr3bScope.inlgITCCamt = 0.0,
+                gstr3bScope.inlgITCSamt = 0.0,
+                gstr3bScope.inlgITCCsamt = 0.0,
+                gstr3bScope.insupCompInter = 0.0,
+                gstr3bScope.insupCompIntra = 0.0,
+                gstr3bScope.insupNonGstInter = 0.0,
+                gstr3bScope.insupNonGstIntra = 0.0,
+                gstr3bScope.taxPaidItcIgst_Igst_amt = 0.0,
+                gstr3bScope.taxPaidItcIgst_Cgst_amt = 0.0,
+                gstr3bScope.taxPaidItcIgst_Sgst_amt = 0.0,
+                gstr3bScope.taxPaidCashNonRevigsttx = 0.0,
+                gstr3bScope.taxPaidCashNonRevigstintr = 0.0,
+                gstr3bScope.taxPaidItcCgst_Igst_amt = 0.0,
+                gstr3bScope.taxPaidItcCgst_Cgst_amt = 0.0,
+                gstr3bScope.taxPaidCashNonRevcgsttx = 0.0,
+                gstr3bScope.taxPaidCashNonRevcgstintr = 0.0,
+                gstr3bScope.taxPaidCashNonRevcgstfee = 0.0,
+                gstr3bScope.taxPaidItcSgst_Igst_amt = 0.0,
+                gstr3bScope.taxPaidItcSgst_Sgst_amt = 0.0,
+                gstr3bScope.taxPaidCashNonRevsgsttx = 0.0,
+                gstr3bScope.taxPaidCashNonRevsgstintr = 0.0,
+                gstr3bScope.taxPaidCashNonRevsgstfee = 0.0,
+                gstr3bScope.taxPaidItcCess_Cess_amt = 0.0,
+                gstr3bScope.taxPaidCashNonRevcesstx = 0.0,
+                gstr3bScope.taxPaidCashNonRevcessintr = 0.0,
+                gstr3bScope.taxPaidCashRevigsttx = 0.0,
+                gstr3bScope.taxPaidCashRevcgsttx = 0.0,
+                gstr3bScope.taxPaidCashRevsgsttx = 0.0,
+                gstr3bScope.taxPaidCashRevcesstx = 0.0;
+            gstr3bScope.othRev_iamt = 0.0;
+            gstr3bScope.othRev_camt = 0.0;
+            gstr3bScope.othRev_samt = 0.0;
+            gstr3bScope.othRev_csamt = 0.0;
+            gstr3bScope.revrs_iamt = 0.0;
+            gstr3bScope.revrs_camt = 0.0;
+            gstr3bScope.revrs_samt = 0.0;
+            gstr3bScope.revrs_csamt = 0.0;
+            gstr3bScope.taxPaidCashNonRev = null;
+            gstr3bScope.taxPaidCashRev = null;
+            //table 3.1
+            if (gstr3bSummary.sup_details) {
+                if (gstr3bSummary.sup_details.osup_det) {
+                    gstr3bScope.osupTaxvl = gstr3bSummary.sup_details.osup_det.txval;
+                }
+                if (gstr3bSummary.sup_details.osup_det) {
+                    gstr3bScope.osupIamt = gstr3bSummary.sup_details.osup_det.iamt;
+                }
+                if (gstr3bSummary.sup_details.osup_det) {
+                    gstr3bScope.osupCamt = gstr3bSummary.sup_details.osup_det.camt;
+                }
+                if (gstr3bSummary.sup_details.osup_det) {
+                    gstr3bScope.osupSamt = gstr3bSummary.sup_details.osup_det.samt;
+                }
+                if (gstr3bSummary.sup_details.osup_det) {
+                    gstr3bScope.osupCsamt = gstr3bSummary.sup_details.osup_det.csamt;
+                }
+                if (gstr3bSummary.sup_details.osup_zero) {
+                    gstr3bScope.osupZeroRatedTxval = gstr3bSummary.sup_details.osup_zero.txval;
+                }
+                if (gstr3bSummary.sup_details.osup_zero) {
+                    gstr3bScope.osupZeroRatedIamt = gstr3bSummary.sup_details.osup_zero.iamt;
+                }
+                if (gstr3bSummary.sup_details.osup_zero) {
+                    gstr3bScope.osupZeroRatedCsamt = gstr3bSummary.sup_details.osup_zero.csamt;
+                }
+                if (gstr3bSummary.sup_details.osup_nil_exmp) {
+                    gstr3bScope.osupNilTxval = gstr3bSummary.sup_details.osup_nil_exmp.txval;
+                }
+                if (gstr3bSummary.sup_details.isup_rev) {
+                    gstr3bScope.isupRevTxval = gstr3bSummary.sup_details.isup_rev.txval;
+                }
+                if (gstr3bSummary.sup_details.isup_rev) {
+                    gstr3bScope.isupRevIamt = gstr3bSummary.sup_details.isup_rev.iamt;
+                }
+                if (gstr3bSummary.sup_details.isup_rev) {
+                    gstr3bScope.isupRevCamt = gstr3bSummary.sup_details.isup_rev.camt;
+                }
+                if (gstr3bSummary.sup_details.isup_rev) {
+                    gstr3bScope.isupRevSamt = gstr3bSummary.sup_details.isup_rev.samt;
+                }
+                if (gstr3bSummary.sup_details.isup_rev) {
+                    gstr3bScope.isupRevCsamt = gstr3bSummary.sup_details.isup_rev.csamt;
+                }
+                if (gstr3bSummary.sup_details.osup_nongst) {
+                    gstr3bScope.isupNongstTxval = gstr3bSummary.sup_details.osup_nongst.txval;
+                }
+
+            }
+
+            //table 3.2
+            if (gstr3bSummary.intr_ltfee) {
+                if (gstr3bSummary.intr_ltfee.intr_details) {
+                    gstr3bScope.intrestIamt = gstr3bSummary.intr_ltfee.intr_details.iamt;
+                }
+                if (gstr3bSummary.intr_ltfee.intr_details) {
+                    gstr3bScope.intrestCamt = gstr3bSummary.intr_ltfee.intr_details.camt;
+                }
+                if (gstr3bSummary.intr_ltfee.intr_details) {
+                    gstr3bScope.intrestSamt = gstr3bSummary.intr_ltfee.intr_details.samt;
+                }
+                if (gstr3bSummary.intr_ltfee.intr_details) {
+                    gstr3bScope.intrestCsamt = gstr3bSummary.intr_ltfee.intr_details.csamt;
+                }
+                if (gstr3bSummary.intr_ltfee.ltfee_details) {
+                    gstr3bScope.lateFeeCamt = gstr3bSummary.intr_ltfee.ltfee_details.camt;
+                }
+                if (gstr3bSummary.intr_ltfee.ltfee_details) {
+                    gstr3bScope.lateFeeSamt = gstr3bSummary.intr_ltfee.ltfee_details.samt;
+                }
+            }
+
+            //table 4
+            if (gstr3bSummary.inter_sup) {
+
+                $.each(gstr3bSummary.inter_sup, function (val, key) {
+
+                    if (!val.empty) {
+                        if (key == 'unreg_details') {
+                            $.each(val, function (obj) {
+                                // $.each(value, function(val, label) {
+                                gstr3bScope.interSupUnregTotalTax += parseFloat(obj.txval.toString().replace('₹', '') || 0.0);
+                                gstr3bScope.interSupUnregIntTax += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
+                            });
+                        }
+                    }
+                });
+                $.each(gstr3bSummary.inter_sup, function (val, key) {
+
+                    if (!val.empty) {
+                        if (key == 'comp_details') {
+                            $.each(val, function (obj) {
+                                // $.each(value, function(val, label) {
+                                gstr3bScope.interSupCompTotalTax += parseFloat(obj.txval.toString().replace('₹', '') || 0.0);
+                                gstr3bScope.interSupCompIntTax += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
+                            });
+                        }
+                    }
+                });
+                $.each(gstr3bSummary.inter_sup, function (val, key) {
+
+                    if (!val.empty) {
+                        if (key == 'uin_details') {
+                            $.each(val, function (obj) {
+                                //$.each(value, function(val, label) {
+                                gstr3bScope.intersupUINTotalTax += parseFloat(obj.txval.toString().replace('₹', '') || 0.0);
+                                gstr3bScope.intersupUINIntTax += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
+                            });
+                        }
+                    }
+                });
+            }
+
+
+
+
+            //table 5
+
+            if (gstr3bSummary.itc_elg) {
+                $.each(gstr3bSummary.itc_elg, function (val, key) {
+                    if (key == 'itc_avl') {
+                        $.each(val, function (obj) {
+                            gstr3bScope.avITCIamt += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
+                            gstr3bScope.avITCCamt += parseFloat(obj.camt.toString().replace('₹', '') || 0.0);
+                            gstr3bScope.avITCSamt += parseFloat(obj.samt.toString().replace('₹', '') || 0.0);
+                            gstr3bScope.avITCCsamt += parseFloat(obj.csamt.toString().replace('₹', '') || 0.0);
+                        });
+                    } else if (key == 'itc_rev') {
+                        $.each(val, function (obj) {
+                            gstr3bScope.revITCIamt += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
+                            gstr3bScope.revITCCamt += parseFloat(obj.camt.toString().replace('₹', '') || 0.0);
+                            gstr3bScope.revITCSamt += parseFloat(obj.samt.toString().replace('₹', '') || 0.0);
+                            gstr3bScope.revITCCsamt += parseFloat(obj.csamt.toString().replace('₹', '') || 0.0);
+                        });
+                    } else if (key == 'itc_inelg') {
+                        $.each(val, function (obj) {
+                            gstr3bScope.inlgITCIamt += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
+                            gstr3bScope.inlgITCCamt += parseFloat(obj.camt.toString().replace('₹', '') || 0.0);
+                            gstr3bScope.inlgITCSamt += parseFloat(obj.samt.toString().replace('₹', '') || 0.0);
+                            gstr3bScope.inlgITCCsamt += parseFloat(obj.csamt.toString().replace('₹', '') || 0.0);
+                        });
+                    }
+                    gstr3bScope.netITCIamt = (gstr3bScope.avITCIamt - gstr3bScope.revITCIamt);
+                    gstr3bScope.netITCCamt = (gstr3bScope.avITCCamt - gstr3bScope.revITCCamt);
+                    gstr3bScope.netITCSamt = (gstr3bScope.avITCSamt - gstr3bScope.revITCSamt);
+                    gstr3bScope.netITCCsamt = (gstr3bScope.avITCCsamt - gstr3bScope.revITCCsamt);
+
+
+
+                });
+            }
+            gstr3bScope.insupArrInter = [];
+            gstr3bScope.insupArrIntra = [];
+
+            if (gstr3bSummary.inward_sup) {
+                $.each(gstr3bSummary.inward_sup.isup_details, function (obj) {
+                    gstr3bScope.insupArrInter.push(parseFloat(obj.inter));
+                    gstr3bScope.insupArrIntra.push(parseFloat(obj.intra));
+                });
+                gstr3bScope.insupCompInter = gstr3bScope.insupArrInter[0];
+                gstr3bScope.insupCompIntra = gstr3bScope.insupArrIntra[0];
+                gstr3bScope.insupNonGstInter = gstr3bScope.insupArrInter[1];
+                gstr3bScope.insupNonGstIntra = gstr3bScope.insupArrIntra[1];
+
+            }
+
+            //table 6.1
+            if (status != "NF" && gstr3bSummary && gstr3bSummary.qn && gstr3bSummary.qn.q1 === 'Y') {
+                createGstPdf(gstin, rtn_prd, formDetails);
+            }
+            else if (status != "NF") {
+                if (taxPayableResponse.status == 1 && taxPayableResponse.data.status == 2) {
+                    gstr3bScope.emptyString = null;
+                    if (taxPayableResponse.data.returnsDbCdredList.tax_pay) {
+                        gstr3bScope.taxPayableNonRev = taxPayableResponse.data.returnsDbCdredList.tax_pay[0];
+                        gstr3bScope.taxPayableRev = taxPayableResponse.data.returnsDbCdredList.tax_pay[1];
+                    }
+                    if (taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash) {
+                        if (taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0]) {
+                            gstr3bScope.taxPaidCashNonRev = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0].trancd === 30002 ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0] : gstr3bScope.emptyString;
+
+                            gstr3bScope.taxPaidCashRev = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0].trancd === 30003 ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0] : gstr3bScope.emptyString;
+                        }
+
+                        if (taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1]) {
+
+                            gstr3bScope.taxPaidCashNonRev = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1].trancd === 30002 ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1] : gstr3bScope.emptyString;
+
+                            gstr3bScope.taxPaidCashRev = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1].trancd === 30003 ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1] : gstr3bScope.emptyString;
+                        }
+
+                        if (taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1]) {
+
+                            gstr3bScope.taxPaidCashNonRev = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0].trancd === 30002 ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0] : taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1];
+
+                            gstr3bScope.taxPaidCashRev = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0].trancd === 30003 ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0] : taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1];
+                        }
+                    }
+                    if (Object.keys(taxPayableResponse.data.returnsDbCdredList.tax_paid).length > 0 && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc) {
+                        gstr3bScope.taxPaidItc = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] : 0;
+                        gstr3bScope.taxPaidItcIgst_Igst_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_igst_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_igst_amt : 0;
+                        gstr3bScope.taxPaidItcIgst_Cgst_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_cgst_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_cgst_amt : 0;
+                        gstr3bScope.taxPaidItcIgst_Sgst_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_sgst_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_sgst_amt : 0;
+
+                        gstr3bScope.taxPaidItcCgst_Igst_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cgst_igst_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cgst_igst_amt : 0;
+                        gstr3bScope.taxPaidItcCgst_Cgst_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cgst_cgst_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cgst_cgst_amt : 0;
+
+                        gstr3bScope.taxPaidItcSgst_Igst_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].sgst_igst_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].sgst_igst_amt : 0;
+                        gstr3bScope.taxPaidItcSgst_Sgst_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].sgst_sgst_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].sgst_sgst_amt : 0;
+
+                        gstr3bScope.taxPaidItcCess_Cess_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cess_cess_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cess_cess_amt : 0;
+                    }
+                    if (gstr3bScope.taxPaidCashNonRev != null) {
+                        gstr3bScope.taxPaidCashNonRevigsttx = gstr3bScope.taxPaidCashNonRev.igst.tx;
+                        gstr3bScope.taxPaidCashNonRevigstintr = gstr3bScope.taxPaidCashNonRev.igst.intr;
+                        gstr3bScope.taxPaidCashNonRevcgsttx = gstr3bScope.taxPaidCashNonRev.cgst.tx;
+                        gstr3bScope.taxPaidCashNonRevcgstintr = gstr3bScope.taxPaidCashNonRev.cgst.intr;
+                        gstr3bScope.taxPaidCashNonRevcgstfee = gstr3bScope.taxPaidCashNonRev.cgst.fee;
+                        gstr3bScope.taxPaidCashNonRevsgsttx = gstr3bScope.taxPaidCashNonRev.sgst.tx;
+                        gstr3bScope.taxPaidCashNonRevsgstintr = gstr3bScope.taxPaidCashNonRev.sgst.intr;
+                        gstr3bScope.taxPaidCashNonRevsgstfee = gstr3bScope.taxPaidCashNonRev.sgst.fee;
+                        gstr3bScope.taxPaidCashNonRevcesstx = gstr3bScope.taxPaidCashNonRev.cess.tx;
+                        gstr3bScope.taxPaidCashNonRevcessintr = gstr3bScope.taxPaidCashNonRev.cess.intr;
+                    }
+                    if (gstr3bScope.taxPaidCashRev != null) {
+                        gstr3bScope.taxPaidCashRevigsttx = gstr3bScope.taxPaidCashRev.igst.tx;
+                        gstr3bScope.taxPaidCashRevcgsttx = gstr3bScope.taxPaidCashRev.cgst.tx;
+                        gstr3bScope.taxPaidCashRevsgsttx = gstr3bScope.taxPaidCashRev.sgst.tx;
+                        gstr3bScope.taxPaidCashRevcesstx = gstr3bScope.taxPaidCashRev.cess.tx;
+                    }
+                    createGstPdf(gstin, rtn_prd, formDetails);
+                } else {
+                    createGstPdf(gstin, rtn_prd, formDetails);
+                    gstr3bScope.noLiab = true;
+                }
+            }
+        }
+
+        function createGstPdf(gstin, rtn_prd, formDetails) {
+            var pdfname = 'GSTR3B_' + gstin + '_' + rtn_prd + ".pdf";
+            var text = "  FINAL ";
+
+
+            var dd = {
+                pageSize: 'A4',
+                pageOrientation: 'landscape',
+                pageMargin: [40, 60, 40, 60],
+                watermark: {
+                    text: text,
+                    color: 'black',
+                    opacity: 0.3,
+                    bold: true,
+                    italics: false
+                },
+                content: [
+                    {
+                        text: 'Form GSTR-3B',
+                        style: 'header'
+                    },
+                    {
+                        text: '[See rule 61(5)]',
+                        style: 'center'
+                    },
+
+                    {
+                        style: 'retprd',
+                        table: {
+                            widths: ['30%', 'auto'],
+                            body: [
+                                ['Year', formDetails.fy],
+                                ['Month', formDetails.fm],
+
+                            ]
+                        }
+                    },
+                    {
+                        style: 'tableExample',
+                        table: {
+                            widths: ['65%', 'auto'],
+                            body: [
+                                ['1. GSTIN', formDetails.gstin || '-'],
+                                ['2. Legal name of the registered person', formDetails.ln || '-'],
+                            ]
+                        }
+                    },
+                    {
+                        text: '3.1 Tax on outward and reverse charge inward supplies',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                [
+                                    {
+                                        text: 'Nature of Supplies',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Total Taxable value',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Integrated Tax',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Central Tax',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'State/UT Tax',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Cess',
+                                        bold: true
+                                    }
+                                ],
+                                [
+                                    '(a) Outward taxable supplies (other than zero rated, nil rated and exempted)', {
+                                        text: parseFloat(gstr3bScope.osupTaxvl).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.osupIamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.osupCamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.osupSamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.osupCsamt).toFixed(2),
+                                        alignment: 'right'
+                                    }
+                                ],
+
+                                [
+                                    '(b) Outward taxable supplies (zero rated)',
+                                    {
+                                        text: parseFloat(gstr3bScope.osupZeroRatedTxval).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.osupZeroRatedIamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.osupZeroRatedCsamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                ],
+
+                                [
+                                    '(c) Other outward supplies (Nil rated, exempted)',
+                                    {
+                                        text: parseFloat(gstr3bScope.osupNilTxval).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    }
+                                ],
+                                [
+                                    '(d) Inward supplies (liable to reverse charge)',
+                                    {
+                                        text: parseFloat(gstr3bScope.isupRevTxval).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.isupRevIamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.isupRevCamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.isupRevSamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.isupRevCsamt).toFixed(2),
+                                        alignment: 'right'
+                                    }
+                                ],
+                                [
+                                    '(e) Non-GST outward supplies',
+                                    {
+                                        text: parseFloat(gstr3bScope.isupNongstTxval).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    }
+                                ]
+                            ]
+                        }
+                    }, {
+                        text: '3.2 Inter-state supplies',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                [
+                                    {
+                                        text: 'Nature of Supplies',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Total Taxable value',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Integrated Tax',
+                                        bold: true
+                                    }
+                                ],
+                                [
+                                    'Supplies made to Unregistered Persons',
+                                    {
+                                        text: parseFloat(gstr3bScope.interSupUnregTotalTax).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.interSupUnregIntTax).toFixed(2),
+                                        alignment: 'right'
+                                    }
+                                ],
+                                [
+                                    'Supplies made to Composition Taxable Persons',
+                                    {
+                                        text: parseFloat(gstr3bScope.interSupCompTotalTax).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.interSupCompIntTax).toFixed(2),
+                                        alignment: 'right'
+                                    }
+                                ],
+                                [
+                                    'Supplies made to UIN holders',
+                                    {
+                                        text: parseFloat(gstr3bScope.intersupUINTotalTax).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.intersupUINIntTax).toFixed(2),
+                                        alignment: 'right'
+                                    }
+                                ]
+                            ]
+                        }
+                    }, {
+                        text: '4. Eligible ITC',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableITC',
+                        table: {
+                            body: [
+                                [
+                                    {
+                                        text: 'Details',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Integrated Tax',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Central Tax',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'State/UT Tax',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Cess',
+                                        bold: true
+                                    }
+                                ],
+                                [
+                                    '(A) ITC Available',
+                                    {
+                                        text: parseFloat(gstr3bScope.avITCIamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.avITCCamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.avITCSamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.avITCCsamt).toFixed(2),
+                                        alignment: 'right'
+                                    }
+                                ],
+                                [
+                                    '(B) ITC Reversed',
+                                    {
+                                        text: parseFloat(gstr3bScope.revITCIamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.revITCCamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.revITCSamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.revITCCsamt).toFixed(2),
+                                        alignment: 'right'
+                                    }
+                                ],
+                                [
+                                    '(C) Net ITC Available (A) – (B)',
+                                    {
+                                        text: parseFloat(gstr3bScope.netITCIamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.netITCCamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.netITCSamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.netITCCsamt).toFixed(2),
+                                        alignment: 'right'
+                                    }
+                                ],
+                                [
+                                    '(D) Ineligible ITC',
+                                    {
+                                        text: parseFloat(gstr3bScope.inlgITCIamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.inlgITCCamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.inlgITCSamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.inlgITCCsamt).toFixed(2),
+                                        alignment: 'right'
+                                    }
+                                ]
+                            ],
+                            lineHeight: 3
+                        }
+                    }, {
+                        text: '5. Exempt, nil and Non GST inward supplies',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                [
+                                    {
+                                        text: 'Nature of Supplies',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Inter-state supplies',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Intra-state supplies',
+                                        bold: true
+                                    }
+                                ],
+                                [
+                                    'From a supplier under composition scheme, Exempt and Nil rated supply',
+                                    {
+                                        text: parseFloat(gstr3bScope.insupCompInter).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.insupCompIntra).toFixed(2),
+                                        alignment: 'right'
+                                    }
+                                ],
+                                [
+                                    'Non-GST supply',
+                                    {
+                                        text: parseFloat(gstr3bScope.insupNonGstInter).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.insupNonGstIntra).toFixed(2),
+                                        alignment: 'right'
+                                    }
+                                ]
+
+                            ]
+                        }
+                    }, {
+                        text: '5.1 Interest and Late fee',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                [
+                                    {
+                                        text: 'Details',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Integrated Tax',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Central Tax',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'State/UT Tax',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Cess',
+                                        bold: true
+                                    }
+                                ],
+                                [
+                                    'Interest',
+                                    {
+                                        text: parseFloat(gstr3bScope.intrestIamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.intrestCamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.intrestSamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.intrestCsamt).toFixed(2),
+                                        alignment: 'right'
+                                    }
+                                ],
+                                [
+                                    'Late fee',
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.lateFeeCamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.lateFeeSamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    }
+                                ]
+                            ]
+                        },
+                        pageBreak: 'after'
+                    }, {
+                        text: '6.1 Payment of tax',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                [
+                                    {
+                                        text: 'Description',
+                                        rowSpan: 2,
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Total tax payable',
+                                        rowSpan: 2,
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Tax paid through ITC',
+                                        style: 'tableHeader',
+                                        colSpan: 4,
+                                        alignment: 'center'
+                                    },
+                                    {},
+                                    {},
+                                    {},
+                                    {
+                                        text: 'Tax/Cess paid in cash',
+                                        rowSpan: 2,
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Interest paid in cash',
+                                        rowSpan: 2,
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Late fee paid in cash',
+                                        rowSpan: 2,
+                                        bold: true
+                                    }
+                                ],
+
+                                [
+                                    'Description',
+                                    'Total tax payable',
+                                    'Integrated Tax',
+                                    'Central Tax',
+                                    'State/UT Tax',
+                                    'Cess',
+                                    'Tax/Cess paid in cash',
+                                    'Interest paid in cash',
+                                    'Late fee paid in cash'
+                                ],
+                                [
+                                    {
+                                        text: '(A) Other than reverse charge',
+                                        style: 'tableHeader',
+                                        colSpan: 9,
+                                        alignment: 'left'
+                                    },
+                                    {},
+                                    {},
+                                    {},
+                                    {},
+                                    {},
+                                    {},
+                                    {},
+                                    {}
+                                ],
+                                [
+                                    'Integrated Tax',
+                                    {
+                                        text: parseFloat(gstr3bScope.othRev_iamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidItcIgst_Igst_amt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidItcIgst_Cgst_amt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidItcIgst_Sgst_amt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevigsttx).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevigstintr).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    }
+                                ],
+                                [
+                                    'Central Tax',
+                                    {
+                                        text: parseFloat(gstr3bScope.othRev_camt).toFixed(),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidItcCgst_Igst_amt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidItcCgst_Cgst_amt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevcgsttx).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevcgstintr).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevcgstfee).toFixed(2),
+                                        alignment: 'right'
+                                    }
+                                ],
+                                [
+                                    'State/UT Tax',
+                                    {
+                                        text: parseFloat(gstr3bScope.othRev_samt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidItcSgst_Igst_amt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidItcSgst_Sgst_amt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevsgsttx).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevsgstintr).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevsgstfee).toFixed(2),
+                                        alignment: 'right'
+                                    }
+                                ],
+                                [
+                                    'Cess',
+                                    {
+                                        text: parseFloat(gstr3bScope.othRev_csamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidItcCess_Cess_amt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevcesstx).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevcessintr).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    }
+                                ],
+                                [
+                                    {
+                                        text: '(B) Reverse charge',
+                                        style: 'tableHeader',
+                                        colSpan: 9,
+                                        alignment: 'left'
+                                    },
+                                    {},
+                                    {},
+                                    {},
+                                    {},
+                                    {},
+                                    {},
+                                    {},
+                                    {}
+                                ],
+                                [
+                                    'Integrated Tax',
+                                    {
+                                        text: parseFloat(gstr3bScope.revrs_iamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidCashRevigsttx).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    }
+                                ],
+                                [
+                                    'Central Tax',
+                                    {
+                                        text: parseFloat(gstr3bScope.revrs_camt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidCashRevcgsttx).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    }
+                                ],
+                                [
+                                    'State/UT Tax',
+                                    {
+                                        text: parseFloat(gstr3bScope.revrs_samt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidCashRevsgsttx).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    }
+                                ],
+                                [
+                                    'Cess',
+                                    {
+                                        text: parseFloat(gstr3bScope.revrs_csamt).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: parseFloat(gstr3bScope.taxPaidCashRevcesstx).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: '-',
+                                        alignment: 'center'
+                                    }
+                                ]
+                            ]
+                        }
+                    }, {
+                        text: '6.2. TDS/TCS Credit',
+                        style: 'subheader'
+                    },
+
+                    {
+                        style: 'tableExample',
+                        table: {
+                            body: [
+                                [
+                                    {
+                                        text: 'Details',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Integrated Tax',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'Central Tax',
+                                        bold: true
+                                    },
+                                    {
+                                        text: 'State/UT Tax',
+                                        bold: true
+                                    }
+                                ],
+                                [
+                                    'TDS',
+                                    {
+                                        text: '0',
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '0',
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '0',
+                                        alignment: 'right'
+                                    }
+                                ],
+                                [
+                                    'TCS',
+                                    {
+                                        text: '0',
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '0',
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: '0',
+                                        alignment: 'right'
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                styles: {
+                    header: {
+                        fontSize: 18,
+                        bold: true,
+                        margin: [300, 0, 0, 10]
+                    },
+                    subheader: {
+                        fontSize: 16,
+                        bold: true,
+                        margin: [0, 10, 0, 5]
+                    },
+                    tableExample: {
+                        margin: [0, 5, 0, 15]
+                    },
+                    tableITC: {
+                        margin: [0, 5, 0, 50]
+                    },
+                    retprd: {
+                        margin: [470, 0, 0, 10]
+                    },
+                    center: {
+                        margin: [320, 0, 0, 10]
+                    },
+                    tableHeader: {
+                        bold: true,
+                        fontSize: 13,
+                        color: 'black'
+                    },
+                    rule: {
+                        margin: [315, 0, 0, 10]
+                    }
+                }
+
+            };
+
+            //pdfMake.createPdf(dd).download(pdfname);
             pdfMake.createPdf(dd).getBase64((data) => {
                 console.log("PDF:" + pdfname + ":" + data);
             });

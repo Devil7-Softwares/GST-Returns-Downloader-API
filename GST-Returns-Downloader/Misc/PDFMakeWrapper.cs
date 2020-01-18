@@ -107,6 +107,15 @@ namespace Devil7.Automation.GSTR.Downloader.Misc
             }
             await page.EvaluateFunctionAsync("generateGSTR1PDF", data, filingStatus, GSTIN, monthValue, GetFinancialYear(monthValue), RegisteredName, TradeName, null, null);
         }
+
+        public async Task GenerateGSTR3B(string formDetails, string summary, string taxPayable, string monthValue, string filingStatus)
+        {
+            if (browser == null || page == null)
+            {
+                await InitializeBrowser();
+            }
+            await page.EvaluateFunctionAsync("generateGSTR3BPDF", GSTIN, monthValue, filingStatus, summary, taxPayable, formDetails);
+        }
         #endregion
     }
 }
