@@ -675,6 +675,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                         }
                     }
                 }
+
+                MessageBoxHelper.Show("Process Completed! View Logs for Details", "Done").Wait();
             });
         }
 
