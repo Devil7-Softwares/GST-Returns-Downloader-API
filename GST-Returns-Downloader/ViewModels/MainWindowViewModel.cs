@@ -470,7 +470,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
 
                 try
                 {
-                    this.isBusy = true;
+                    this.IsBusy = true;
                     this.Status = "Fetching User Status...";
                     this.Cancelable = false;
 
@@ -525,7 +525,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                 }
                 finally
                 {
-                    this.isBusy = false;
+                    this.IsBusy = false;
                 }
 
                 return result;
@@ -699,10 +699,14 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
             return Task.Run<RoleStatus>(() =>
             {
                 RoleStatus value = null;
-
+                bool isBusyChanged = false;
                 try
                 {
-                    this.isBusy = true;
+                    if (this.IsBusy != true)
+                    {
+                        isBusyChanged = true;
+                        this.IsBusy = true;
+                    }
                     this.Status = "Fetching Returns Status Details...";
 
                     UpdateURL(URLs.ReturnsURL);
@@ -726,7 +730,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                 }
                 finally
                 {
-                    this.isBusy = false;
+                    if (isBusyChanged)
+                        this.IsBusy = false;
                 }
 
                 return value;
