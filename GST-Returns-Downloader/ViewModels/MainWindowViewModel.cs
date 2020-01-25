@@ -540,133 +540,139 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         {
             return Task.Run(() =>
             {
-                if (this.ReturnPeriods == null)
+                try
                 {
-                    MessageBoxHelper.Show("Return periods is null. Try after successful login!", "Error");
-                    return;
-                }
-                bool isReturnPeriodSelected = false;
-                foreach (YearData yearData in this.ReturnPeriods)
-                {
-                    foreach (MonthData monthData in yearData.Months)
+                    this.Status = "Starting process...";
+                    this.IsBusy = true;
+                    if (this.ReturnPeriods == null)
                     {
-                        if (monthData.IsChecked)
-                        {
-                            isReturnPeriodSelected = true;
-                            break;
-                        }
+                        MessageBoxHelper.Show("Return periods is null. Try after successful login!", "Error");
+                        return;
                     }
-                    if (isReturnPeriodSelected)
-                        break;
-                }
-                if (!isReturnPeriodSelected)
-                {
-                    MessageBoxHelper.Show("Please select atleast one month!", "Error");
-                    return;
-                }
-                bool isReturnOperationSelected = false;
-                foreach (ReturnsData returnsData in this.ReturnsDatas)
-                {
-                    foreach (FileType fileType in returnsData.FileTypes)
+                    bool isReturnPeriodSelected = false;
+                    foreach (YearData yearData in this.ReturnPeriods)
                     {
-                        foreach (ReturnOperation returnOperation in fileType.Operations)
+                        foreach (MonthData monthData in yearData.Months)
                         {
-                            if (returnOperation.Value)
+                            if (monthData.IsChecked)
                             {
-                                isReturnOperationSelected = true;
+                                isReturnPeriodSelected = true;
                                 break;
                             }
+                        }
+                        if (isReturnPeriodSelected)
+                            break;
+                    }
+                    if (!isReturnPeriodSelected)
+                    {
+                        MessageBoxHelper.Show("Please select atleast one month!", "Error");
+                        return;
+                    }
+                    bool isReturnOperationSelected = false;
+                    foreach (ReturnsData returnsData in this.ReturnsDatas)
+                    {
+                        foreach (FileType fileType in returnsData.FileTypes)
+                        {
+                            foreach (ReturnOperation returnOperation in fileType.Operations)
+                            {
+                                if (returnOperation.Value)
+                                {
+                                    isReturnOperationSelected = true;
+                                    break;
+                                }
+                            }
+                            if (isReturnOperationSelected)
+                                break;
                         }
                         if (isReturnOperationSelected)
                             break;
                     }
-                    if (isReturnOperationSelected)
-                        break;
-                }
-                if (!isReturnOperationSelected)
-                {
-                    MessageBoxHelper.Show("No operation selected. Select atleast one operation from Available Returns!", "Error");
-                    return;
-                }
-
-                foreach (YearData year in this.ReturnPeriods)
-                {
-                    foreach (MonthData month in year.Months)
+                    if (!isReturnOperationSelected)
                     {
-                        if (month.IsChecked)
+                        MessageBoxHelper.Show("No operation selected. Select atleast one operation from Available Returns!", "Error");
+                        return;
+                    }
+
+                    foreach (YearData year in this.ReturnPeriods)
+                    {
+                        foreach (MonthData month in year.Months)
                         {
-                            keepAlive(URLs.DashboardURL);
-                            RoleStatus roleStatus = getRoleStatus(month.Value).Result;
-                            if (roleStatus != null && roleStatus.status == 1 && roleStatus.data != null && roleStatus.data.user != null && roleStatus.data.user.Count > 0)
+                            if (month.IsChecked)
                             {
-                                foreach (User user in roleStatus.data.user)
+                                keepAlive(URLs.DashboardURL);
+                                RoleStatus roleStatus = getRoleStatus(month.Value).Result;
+                                if (roleStatus != null && roleStatus.status == 1 && roleStatus.data != null && roleStatus.data.user != null && roleStatus.data.user.Count > 0)
                                 {
-                                    if (user.returns != null && user.returns.Count > 0)
+                                    foreach (User user in roleStatus.data.user)
                                     {
-                                        foreach (ReturnsData returns in this.ReturnsDatas)
+                                        if (user.returns != null && user.returns.Count > 0)
                                         {
-                                            Return returnStatus = user.returns.Find(item => item.return_ty == returns.ReturnName.Replace(" ", ""));
-                                            if (returnStatus != null)
+                                            foreach (ReturnsData returns in this.ReturnsDatas)
                                             {
-                                                if (returnStatus.tileDisable == false)
+                                                Return returnStatus = user.returns.Find(item => item.return_ty == returns.ReturnName.Replace(" ", ""));
+                                                if (returnStatus != null)
                                                 {
-                                                    foreach (FileType fileType in returns.FileTypes)
+                                                    if (returnStatus.tileDisable == false)
                                                     {
-                                                        if ((!fileType.CheckFiledStatus || returnStatus.status == "FIL" || (fileType.SubmittedIsEnough && returnStatus.status == "FRZ")))
+                                                        foreach (FileType fileType in returns.FileTypes)
                                                         {
-                                                            foreach (ReturnOperation operation in fileType.Operations)
+                                                            if ((!fileType.CheckFiledStatus || returnStatus.status == "FIL" || (fileType.SubmittedIsEnough && returnStatus.status == "FRZ")))
                                                             {
-                                                                if (operation.Value)
+                                                                foreach (ReturnOperation operation in fileType.Operations)
                                                                 {
-                                                                    if (operation.Action != null)
+                                                                    if (operation.Value)
                                                                     {
-                                                                        CommandResult result = operation.Action(Client, month.Value);
-                                                                        if (result.Result == CommandResult.Results.Success)
+                                                                        if (operation.Action != null)
                                                                         {
-                                                                            if (result.Data is List<string>)
+                                                                            this.Status = string.Format("Processing {0} {1} Request for {2}...", returns.ReturnName, operation.OperationName, month.Value);
+                                                                            CommandResult result = operation.Action(Client, month.Value);
+                                                                            if (result.Result == CommandResult.Results.Success)
                                                                             {
-                                                                                foreach (string url in ((List<string>)result.Data))
+                                                                                if (result.Data is List<string>)
                                                                                 {
-                                                                                    Dispatcher.UIThread.InvokeAsync(() =>
+                                                                                    foreach (string url in ((List<string>)result.Data))
                                                                                     {
-                                                                                        DownloadManager.DownloadItem downloadItem = new DownloadManager.DownloadItem(url, this.DownloadsFolder, string.Format("{0}_{1}_{2}", returns.ReturnName.Replace(" ", ""), month.Value, fileType.FileTypeName), true);
-                                                                                        downloadItem.CustomCookies = Client.CookieContainer.GetCookies(Client.BaseUrl);
-                                                                                        downloadManager.Downloads.Add(downloadItem);
-                                                                                        downloadItem.Start.Execute();
-                                                                                    });
+                                                                                        Dispatcher.UIThread.InvokeAsync(() =>
+                                                                                        {
+                                                                                            DownloadManager.DownloadItem downloadItem = new DownloadManager.DownloadItem(url, this.DownloadsFolder, string.Format("{0}_{1}_{2}", returns.ReturnName.Replace(" ", ""), month.Value, fileType.FileTypeName), true);
+                                                                                            downloadItem.CustomCookies = Client.CookieContainer.GetCookies(Client.BaseUrl);
+                                                                                            downloadManager.Downloads.Add(downloadItem);
+                                                                                            downloadItem.Start.Execute();
+                                                                                        });
+                                                                                    }
                                                                                 }
-                                                                            }
-                                                                            else if (result.Data is string)
-                                                                            {
-                                                                                if (returns.ReturnName == "GSTR 1")
+                                                                                else if (result.Data is string)
                                                                                 {
-                                                                                    pdfMaker.GenerateGSTR1(result.Data.ToString(), month.Value, returnStatus.status).Wait();
+                                                                                    if (returns.ReturnName == "GSTR 1")
+                                                                                    {
+                                                                                        pdfMaker.GenerateGSTR1(result.Data.ToString(), month.Value, returnStatus.status).Wait();
+                                                                                    }
                                                                                 }
-                                                                            }
-                                                                            else if (result.Data is ReturnDataGSTR3B)
-                                                                            {
-                                                                                ReturnDataGSTR3B data = (ReturnDataGSTR3B)result.Data;
-                                                                                pdfMaker.GenerateGSTR3B(data.formDetailsContent, data.summaryContent, data.taxPayableContent, month.Value, returnStatus.status).Wait();
+                                                                                else if (result.Data is ReturnDataGSTR3B)
+                                                                                {
+                                                                                    ReturnDataGSTR3B data = (ReturnDataGSTR3B)result.Data;
+                                                                                    pdfMaker.GenerateGSTR3B(data.formDetailsContent, data.summaryContent, data.taxPayableContent, month.Value, returnStatus.status).Wait();
+                                                                                }
                                                                             }
                                                                         }
                                                                     }
                                                                 }
                                                             }
+                                                            else
+                                                            {
+                                                                Log.Warning("Unable to Request Generate/Download. {0} Not Filed for Month {1}", returns.ReturnName.Replace(" ", ""), month.Value);
+                                                            }
                                                         }
-                                                        else
-                                                        {
-                                                            Log.Warning("Unable to Request Generate/Download. {0} Not Filed for Month {1}", returns.ReturnName.Replace(" ", ""), month.Value);
-                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        Log.Warning("{0} Return Status for Month {1} is Disabled!", returns.ReturnName.Replace(" ", ""), month.Value);
                                                     }
                                                 }
                                                 else
                                                 {
-                                                    Log.Warning("{0} Return Status for Month {1} is Disabled!", returns.ReturnName.Replace(" ", ""), month.Value);
+                                                    Log.Verbose("Unable to Find {0} Return Status for Month {1}", returns.ReturnName.Replace(" ", ""), month.Value);
                                                 }
-                                            }
-                                            else
-                                            {
-                                                Log.Verbose("Unable to Find {0} Return Status for Month {1}", returns.ReturnName.Replace(" ", ""), month.Value);
                                             }
                                         }
                                     }
@@ -674,9 +680,17 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                             }
                         }
                     }
-                }
 
-                MessageBoxHelper.Show("Process Completed! View Logs for Details", "Done").Wait();
+                    MessageBoxHelper.Show("Process Completed! View Logs for Details", "Done").Wait();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Process failed! {0}", ex.Message);
+                }
+                finally
+                {
+                    this.IsBusy = false;
+                }
             });
         }
 
