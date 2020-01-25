@@ -16,6 +16,7 @@ namespace Devil7.Automation.GSTR.Downloader.Views
     {
         DataGrid dataGrid;
         TextBox txtUsername;
+        DispatcherTimer keepAliveTimer;
 
         public MainWindow()
         {
@@ -32,6 +33,8 @@ namespace Devil7.Automation.GSTR.Downloader.Views
             this.downloadManager = this.FindControl<DownloadManager>("DownloadManager");
             this.dataGrid = this.FindControl<DataGrid>("dg_Logs");
             this.txtUsername = this.FindControl<TextBox>("txt_Username");
+
+            this.keepAliveTimer = new DispatcherTimer(TimeSpan.FromMinutes(3), DispatcherPriority.Normal, new EventHandler(keepAliveTimer_Tick));
         }
 
         #region Properties
@@ -64,7 +67,12 @@ namespace Devil7.Automation.GSTR.Downloader.Views
                 await MessageBoxHelper.Show(result, this);
                 if (result.Result == CommandResult.Results.Success)
                 {
+                    keepAliveTimer.Start();
                     await this.ViewModel.GetMonths.Execute();
+                }
+                else
+                {
+                    keepAliveTimer.Stop();
                 }
             });
             this.ViewModel.GetMonths.Subscribe(async result =>
@@ -82,13 +90,14 @@ namespace Devil7.Automation.GSTR.Downloader.Views
 
             if (dataGrid.Items is ObservableCollection<LogEvent>)
             {
-                (dataGrid.Items as ObservableCollection<LogEvent>).CollectionChanged += (object collection, System.Collections.Specialized.NotifyCollectionChangedEventArgs ce) => { 
+                (dataGrid.Items as ObservableCollection<LogEvent>).CollectionChanged += (object collection, System.Collections.Specialized.NotifyCollectionChangedEventArgs ce) =>
+                {
                     if (ce.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
                     {
                         if (Dispatcher.UIThread.CheckAccess())
                             ScrollToBottom();
                         else
-                            Dispatcher.UIThread.InvokeAsync(() => ScrollToBottom()); 
+                            Dispatcher.UIThread.InvokeAsync(() => ScrollToBottom());
                     }
                 };
             }
@@ -108,6 +117,11 @@ namespace Devil7.Automation.GSTR.Downloader.Views
                 this.ViewModel.Username = clipBoardText.Split("\t")[0].Trim();
                 this.ViewModel.Password = clipBoardText.Split("\t")[1].Trim();
             }
+        }
+
+        private void keepAliveTimer_Tick(object sender, EventArgs e)
+        {
+            this.ViewModel.KeepAlive.Execute(URLs.DashboardURL);
         }
         #endregion
 
