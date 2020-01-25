@@ -30,11 +30,11 @@ namespace Devil7.Automation.GSTR.Downloader.Views
         {
             AvaloniaXamlLoader.Load(this);
 
-            this.downloadManager = this.FindControl<DownloadManager>("DownloadManager");
+            this.DownloadManager = this.FindControl<DownloadManager>("DownloadManager");
             this.dataGrid = this.FindControl<DataGrid>("dg_Logs");
             this.txtUsername = this.FindControl<TextBox>("txt_Username");
 
-            this.keepAliveTimer = new DispatcherTimer(TimeSpan.FromMinutes(3), DispatcherPriority.Normal, new EventHandler(keepAliveTimer_Tick));
+            this.keepAliveTimer = new DispatcherTimer(TimeSpan.FromMinutes(3), DispatcherPriority.Normal, new EventHandler(KeepAliveTimer_Tick));
         }
 
         #region Properties
@@ -46,14 +46,13 @@ namespace Devil7.Automation.GSTR.Downloader.Views
             }
         }
 
-        private DownloadManager downloadManager;
-        private DownloadManager DownloadManager { get => downloadManager; }
+        private DownloadManager DownloadManager { get; set; }
         #endregion
 
         #region Events
         private void Window_Opened(object sender, EventArgs e)
         {
-            this.ViewModel.SetDownloadManager(downloadManager);
+            this.ViewModel.SetDownloadManager(DownloadManager);
 
             this.ViewModel.InitializeAPI.Execute().Subscribe();
 
@@ -111,7 +110,7 @@ namespace Devil7.Automation.GSTR.Downloader.Views
         private void TxtUsername_KeyUp(object sender, Avalonia.Input.KeyEventArgs e)
         {
             string clipBoardText = Application.Current.Clipboard.GetTextAsync().Result;
-            if (e.Key == Avalonia.Input.Key.V && e.Modifiers == Avalonia.Input.InputModifiers.Control && clipBoardText.Contains("\t"))
+            if (e.Key == Avalonia.Input.Key.V && e.KeyModifiers == Avalonia.Input.KeyModifiers.Control && clipBoardText.Contains("\t"))
             {
                 e.Handled = true;
                 this.ViewModel.Username = clipBoardText.Split("\t")[0].Trim();
@@ -119,7 +118,7 @@ namespace Devil7.Automation.GSTR.Downloader.Views
             }
         }
 
-        private void keepAliveTimer_Tick(object sender, EventArgs e)
+        private void KeepAliveTimer_Tick(object sender, EventArgs e)
         {
             this.ViewModel.KeepAlive.Execute(URLs.DashboardURL);
         }

@@ -26,17 +26,17 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
             this.Random = new Random();
             this.LogEvents = new ObservableCollection<LogEvent>();
             this.downloadsFolder = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-            this.openFolderDialog = new OpenFolderDialog() { DefaultDirectory = downloadsFolder };
+            this.openFolderDialog = new OpenFolderDialog() { Directory = downloadsFolder };
             this.pdfMaker = new PDFMakeWrapper(DownloadsFolder);
 
-            this.InitializeAPI = ReactiveCommand.CreateFromTask<CommandResult>(initializeAPI);
-            this.RefreshCaptcha = ReactiveCommand.CreateFromTask<CommandResult>(refreshCaptcha);
-            this.Authendicate = ReactiveCommand.CreateFromTask<CommandResult>(authendicate);
-            this.KeepAlive = ReactiveCommand.CreateFromTask<string>(keepAlive);
-            this.GetMonths = ReactiveCommand.CreateFromTask<CommandResult>(getMonths);
-            this.GetUserStatus = ReactiveCommand.CreateFromTask<CommandResult>(getUserStatus);
-            this.StartProcess = ReactiveCommand.CreateFromTask(startProcess);
-            this.SelectDownloadsFolder = ReactiveCommand.CreateFromTask<Window>(selectDownloadsFolder);
+            this.InitializeAPI = ReactiveCommand.CreateFromTask<CommandResult>(InitializeAPI_Task);
+            this.RefreshCaptcha = ReactiveCommand.CreateFromTask<CommandResult>(RefreshCaptcha_Task);
+            this.Authendicate = ReactiveCommand.CreateFromTask<CommandResult>(Authendicate_Task);
+            this.KeepAlive = ReactiveCommand.CreateFromTask<string>(KeepAlive_Task);
+            this.GetMonths = ReactiveCommand.CreateFromTask<CommandResult>(GetMonths_Task);
+            this.GetUserStatus = ReactiveCommand.CreateFromTask<CommandResult>(GetUserStatus_Task);
+            this.StartProcess = ReactiveCommand.CreateFromTask(StartProcess_Task);
+            this.SelectDownloadsFolder = ReactiveCommand.CreateFromTask<Window>(SelectDownloadsFolder_Task);
 
             this.LoadReturnsDatas();
         }
@@ -46,8 +46,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         private Random Random;
         private RestClient Client;
         private DownloadManager downloadManager;
-        private OpenFolderDialog openFolderDialog;
-        private PDFMakeWrapper pdfMaker;
+        private readonly OpenFolderDialog openFolderDialog;
+        private readonly PDFMakeWrapper pdfMaker;
 
         private string username = "";
         private string password = "";
@@ -141,7 +141,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         {
             get;
         }
-        private Task<CommandResult> initializeAPI()
+        private Task<CommandResult> InitializeAPI_Task()
         {
             return Task.Run<CommandResult>(() =>
             {
@@ -154,9 +154,11 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                 try
                 {
                     this.Random = new Random();
-                    this.Client = new RestClient(URLs.ServicesURL);
-                    this.Client.CookieContainer = new System.Net.CookieContainer();
-                    this.Client.UserAgent = DownloadManager.UserAgent;
+                    this.Client = new RestClient(URLs.ServicesURL)
+                    {
+                        CookieContainer = new System.Net.CookieContainer(),
+                        UserAgent = DownloadManager.UserAgent
+                    };
 
                     RestRequest InitialRequest = new RestRequest(URLs.Login, Method.GET);
                     RestResponse InitialResponse = (RestResponse)Client.Execute(InitialRequest);
@@ -191,7 +193,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         {
             get;
         }
-        private Task<CommandResult> refreshCaptcha()
+        private Task<CommandResult> RefreshCaptcha_Task()
         {
             return Task.Run<CommandResult>(() =>
             {
@@ -239,7 +241,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         {
             get;
         }
-        private Task<CommandResult> authendicate()
+        private Task<CommandResult> Authendicate_Task()
         {
             return Task.Run<CommandResult>(() =>
             {
@@ -354,7 +356,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         {
             get;
         }
-        private Task keepAlive(string referer)
+        private Task KeepAlive_Task(string referer)
         {
             return Task.Run(() =>
             {
@@ -400,7 +402,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         {
             get;
         }
-        private Task<CommandResult> getMonths()
+        private Task<CommandResult> GetMonths_Task()
         {
             return Task.Run<CommandResult>(() =>
             {
@@ -462,7 +464,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         {
             get;
         }
-        private Task<CommandResult> getUserStatus()
+        private Task<CommandResult> GetUserStatus_Task()
         {
             return Task.Run<CommandResult>(() =>
             {
@@ -536,7 +538,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         {
             get;
         }
-        private Task startProcess()
+        private Task StartProcess_Task()
         {
             return Task.Run(() =>
             {
@@ -599,8 +601,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                         {
                             if (month.IsChecked)
                             {
-                                keepAlive(URLs.DashboardURL);
-                                RoleStatus roleStatus = getRoleStatus(month.Value).Result;
+                                KeepAlive_Task(URLs.DashboardURL);
+                                RoleStatus roleStatus = GetRoleStatus_Task(month.Value).Result;
                                 if (roleStatus != null && roleStatus.status == 1 && roleStatus.data != null && roleStatus.data.user != null && roleStatus.data.user.Count > 0)
                                 {
                                     foreach (User user in roleStatus.data.user)
@@ -634,8 +636,10 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                                                                                     {
                                                                                         Dispatcher.UIThread.InvokeAsync(() =>
                                                                                         {
-                                                                                            DownloadManager.DownloadItem downloadItem = new DownloadManager.DownloadItem(url, this.DownloadsFolder, string.Format("{0}_{1}_{2}", returns.ReturnName.Replace(" ", ""), month.Value, fileType.FileTypeName), true);
-                                                                                            downloadItem.CustomCookies = Client.CookieContainer.GetCookies(Client.BaseUrl);
+                                                                                            DownloadManager.DownloadItem downloadItem = new DownloadManager.DownloadItem(url, this.DownloadsFolder, string.Format("{0}_{1}_{2}", returns.ReturnName.Replace(" ", ""), month.Value, fileType.FileTypeName), true)
+                                                                                            {
+                                                                                                CustomCookies = Client.CookieContainer.GetCookies(Client.BaseUrl)
+                                                                                            };
                                                                                             downloadManager.Downloads.Add(downloadItem);
                                                                                             downloadItem.Start.Execute();
                                                                                         });
@@ -648,9 +652,8 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
                                                                                         pdfMaker.GenerateGSTR1(result.Data.ToString(), month.Value, returnStatus.status).Wait();
                                                                                     }
                                                                                 }
-                                                                                else if (result.Data is ReturnDataGSTR3B)
+                                                                                else if (result.Data is ReturnDataGSTR3B data)
                                                                                 {
-                                                                                    ReturnDataGSTR3B data = (ReturnDataGSTR3B)result.Data;
                                                                                     pdfMaker.GenerateGSTR3B(data.formDetailsContent, data.summaryContent, data.taxPayableContent, month.Value, returnStatus.status).Wait();
                                                                                 }
                                                                             }
@@ -694,7 +697,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
             });
         }
 
-        private Task<RoleStatus> getRoleStatus(string monthValue)
+        private Task<RoleStatus> GetRoleStatus_Task(string monthValue)
         {
             return Task.Run<RoleStatus>(() =>
             {
@@ -739,7 +742,7 @@ namespace Devil7.Automation.GSTR.Downloader.ViewModels
         }
 
         public ReactiveCommand<Window, Unit> SelectDownloadsFolder { get; }
-        private Task selectDownloadsFolder(Window parent)
+        private Task SelectDownloadsFolder_Task(Window parent)
         {
             return Task.Run(async () =>
             {
