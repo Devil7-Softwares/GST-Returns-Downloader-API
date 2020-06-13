@@ -3,73 +3,167 @@
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://static.gst.gov.in/uiassets/javascripts/fwk/pdfmake.min.1.1.js"></script>
     <script src="https://static.gst.gov.in/uiassets/javascripts/fwk/vfs_fonts.js"></script>
+
+
     <script type="text/javascript">
-        // Generates GSTR1 preview pdf from json data
-        // status - Filing status (FIL/NF)
-        // gstin - GST Number
-        // rtn_prd - Return period (122019)
-        // finyr - Financial year (2019-20)
-        // retprd - Return period month (December)
-        // bus_name - Registered name
-        // trade_name - trade_name
-        // gt - Aggregate turnover in preceding financial year
-        // cur_gt - Aggregate turnover apr to june 2019 financial year
-        function generateGSTR1PDF(response, status, gstin, rtn_prd, finyr, retprd, bus_name, trade_name, gt, cur_gt) {
-            response = JSON.parse(response);
-            var gstr1SumData = response.data;
-            var sumryData = gstr1SumData.sec_sum;
-            for (var i = 0; i < sumryData.length; i++) {
-                if (sumryData[i].sec_nm == 'B2B') {
-                    var sec_name = sumryData[i].sec_nm;
-                    pdfb2b = b2bdat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'B2BA') {
-                    pdfb2ba = b2badat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'CDNRA') {
-                    pdfcdnra = cdnadat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'CDNR') {
-                    pdfcdnr = cdnrdat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'CDNUR') {
-                    pdfcdnur = cdnurdat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'CDNURA') {
-                    pdfcdnura = cdnuradat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'B2CLA') {
-                    pdfb2cla = b2cladat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'B2CL') {
-                    pdfb2cl = b2cldat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'B2CSA') {
-                    pdfb2csa = b2csadat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'B2CS') {
-                    pdfb2cs = b2csdat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'NIL') {
-                    pdfnil = nildat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'EXP') {
-                    pdfexp = expdat = sumryData[i];
-                }
-                /*   else if (sumryData[i].sec_nm == 'EXPWP') {
-                    expwdat = sumryData[i];
-                }  */
-                else if (sumryData[i].sec_nm == 'EXPA') {
-                    pdfexpa = expadat = sumryData[i];
-                }
-                /* else if (sumryData[i].sec_nm == 'EXPWPA') {
-                    expawdat = sumryData[i];
-                } */
-                else if (sumryData[i].sec_nm == 'ATA') {
-                    pdfata = atadat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'TXPD') {
-                    pdftxpd = txpdat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'TXPDA') {
-                    pdftxpda = txpadat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'AT') {
-                    pdfat = attdat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'HSN') {
-                    pdfhsn = hsndat = sumryData[i];
-                } else if (sumryData[i].sec_nm == 'DOC_ISSUE') {
-                    pdfdoc = docdat = sumryData[i];
+        // #region General
+        /**
+         * Dimmer show/hide function. See https://static.gst.gov.in/uiassets/js/common/common1.2.js
+         * */
+        $.fn.blockPage = function (type) { };
+
+        /**
+         * Main context variable used in https://static.gst.gov.in/uiassets/js/common/common1.2.js.
+         *
+         * Here created a dummy variable with necessary placeholders.
+         * */
+        var $scope = {
+            disable_btn: function () { }
+        };
+
+        /**
+         *
+         * */
+        var shareData = {};
+        // #endregion
+
+        // #region Polyfils
+        var angular = {};
+        angular.forEach = function (value, callback) {
+            if ($.isArray(value)) {
+                $.each(value, function (key, value) { callback(value, key); });
+            } else {
+                for (var property in value) {
+                    if (value.hasOwnProperty(property))
+                        callback(value[property], property);
                 }
             }
+        };
+        angular.equals = function (x, y) {
+            if (x === y) {
+                return true; // if both x and y are null or undefined and exactly the same
+            } else if (!(x instanceof Object) || !(y instanceof Object)) {
+                return false; // if they are not strictly equal, they both need to be Objects
+            } else if (x.constructor !== y.constructor) {
+                // they must have the exact same prototype chain, the closest we can do is
+                // test their constructor.
+                return false;
+            } else {
+                for (var p in x) {
+                    if (!x.hasOwnProperty(p)) {
+                        continue; // other properties were tested using x.constructor === y.constructor
+                    }
+                    if (!y.hasOwnProperty(p)) {
+                        return false; // allows to compare x[ p ] and y[ p ] when set to undefined
+                    }
+                    if (x[p] === y[p]) {
+                        continue; // if they have the same strict value or identity then they are equal
+                    }
+                    if (typeof (x[p]) !== 'object') {
+                        return false; // Numbers, Strings, Functions, Booleans must be strictly equal
+                    }
+                    if (!deepEquals(x[p], y[p])) {
+                        return false;
+                    }
+                }
+                for (var p in y) {
+                    if (y.hasOwnProperty(p) && !x.hasOwnProperty(p)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        };
+        // #endregion
 
+        // #region GSTR1
+        /**
+         * Generates GSTR1 Return PDF (See https://return.gst.gov.in/returns/auth/gstr1)
+         *
+         * This function emulates $scope.getSummary and $scope.genratepdf functions from https://static.gst.gov.in/uiassets/js/common/common1.2.js.
+         *
+         * @param response      Response json from "https://return.gst.gov.in/returns/auth/api/gstr1/summary?rtn_prd=<rtn_prd>" [<JSON>]
+         * @param status        Return status [FIL/NF]
+         * @param gstin         GSTIN Number
+         * @param rtn_prd       Return period [<MMYYYY>]
+         * @param finyr         Financial period [<YYYY-YY>]
+         * @param retprd        Month of return
+         * @param bus_name      Registered name
+         * @param trade_name    Trade name
+         * @param gt            Aggregate turnover in preceding financial year
+         * @param cur_gt        Aggregate turnover apr to june 2019 financial year
+         */
+        function generateGSTR1PDF(response, status, gstin, rtn_prd, finyr, retprd, bus_name, trade_name, gt, cur_gt) {
+            response = JSON.parse(response);
+
+            $scope.fil_stat = status;
+            shareData.rtn_prd = rtn_prd;
+
+            var main_page_gstin = gstin;
             var pdfname = 'GSTR1_' + gstin + '_' + rtn_prd;
+
+            // #region $scope.getSummary
+            $scope.gstr1SumData = response.data;
+            $scope.summaryTime = response.data.time;
+            $scope.sumTimeFlag = true;
+            $scope.summaryFlag = false;
+            $scope.summaryMsg = "";
+            $scope.sumryData = $scope.gstr1SumData.sec_sum;
+            for (var i = 0; i < $scope.sumryData.length; i++) {
+                if ($scope.sumryData[i].sec_nm == 'B2B') {
+                    shareData.sec_name = $scope.sumryData[i].sec_nm;
+                    pdfb2b = $scope.b2bdat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'B2BA') {
+                    pdfb2ba = $scope.b2badat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'CDNRA') {
+                    pdfcdnra = $scope.cdnadat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'CDNR') {
+                    pdfcdnr = $scope.cdnrdat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'CDNUR') {
+                    pdfcdnur = $scope.cdnurdat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'CDNURA') {
+                    pdfcdnura = $scope.cdnuradat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'B2CLA') {
+                    pdfb2cla = $scope.b2cladat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'B2CL') {
+                    pdfb2cl = $scope.b2cldat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'B2CSA') {
+                    pdfb2csa = $scope.b2csadat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'B2CS') {
+                    pdfb2cs = $scope.b2csdat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'NIL') {
+                    pdfnil = $scope.nildat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'EXP') {
+                    pdfexp = $scope.expdat = $scope.sumryData[i];
+                }
+                /*   else if ($scope.sumryData[i].sec_nm == 'EXPWP') {
+                    $scope.expwdat = $scope.sumryData[i];
+                }  */
+                else if ($scope.sumryData[i].sec_nm == 'EXPA') {
+                    pdfexpa = $scope.expadat = $scope.sumryData[i];
+                }
+                /* else if ($scope.sumryData[i].sec_nm == 'EXPWPA') {
+                    $scope.expawdat = $scope.sumryData[i];
+                } */
+                else if ($scope.sumryData[i].sec_nm == 'ATA') {
+                    pdfata = $scope.atadat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'TXPD') {
+                    pdftxpd = $scope.txpdat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'TXPDA') {
+                    pdftxpda = $scope.txpadat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'AT') {
+                    pdfat = $scope.attdat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'HSN') {
+                    pdfhsn = $scope.hsndat = $scope.sumryData[i];
+                } else if ($scope.sumryData[i].sec_nm == 'DOC_ISSUE') {
+                    pdfdoc = $scope.docdat = $scope.sumryData[i];
+                }
+            }
+            $scope.disable_btn();
+            $().blockPage(false);
+            // #endregion
+
+            // #region $scope.genratepdf
             var text = "DRAFT";
             if (status === 'FRZ' || status === 'FIL') {
                 var text = "FINAL"
@@ -109,7 +203,7 @@
                         table: {
                             widths: ['65%', 'auto'],
                             body: [
-                                ['1. GSTIN', gstin || '-'],
+                                ['1. GSTIN', main_page_gstin || '-'],
                                 ['2(a). Legal name of the registered person', bus_name || '-'],
                                 ['2(b). Trade name, if any', trade_name || '-'],
                                 ['3(a). Aggregate Turnover in the preceding Financial Year', gt || '-'],
@@ -260,7 +354,7 @@
                         table: {
                             body: [
                                 ['No. of Records', 'Documents Issued', 'Documents Cancelled', 'Net issued Documents'],
-                                [docdat.ttl_rec, docdat.ttl_doc_issued, docdat.ttl_doc_cancelled, docdat.net_doc_issued]
+                                [$scope.docdat.ttl_rec, $scope.docdat.ttl_doc_issued, $scope.docdat.ttl_doc_cancelled, $scope.docdat.net_doc_issued]
                             ]
                         }
                     },
@@ -408,306 +502,341 @@
                 }
 
             }
+            // #endregion
 
-            //pdfMake.createPdf(dd).download(pdfname);
-            //pdfMake.createPdf(dd).open({}, window);
+            // Instead of downloaing file, write file to console as base64 so we can get it from our headless browser.
+            // NOTE: Make sure to remove 'pdfMake.createPdf(dd).download(pdfname);' line from $scope.genratepdf function when updating.
             pdfMake.createPdf(dd).getBase64((data) => {
                 console.log("PDF:" + pdfname + ":" + data);
             });
         }
+        // #endregion
 
-        var gstr3bScope = {};
-        function generateGSTR3BPDF(gstin, rtn_prd, status, gstr3bSummaryData, taxPayableData, formDetailsData) {
-            gstr3bSummaryData = JSON.parse(gstr3bSummaryData);
-            taxPayableData = JSON.parse(taxPayableData);
-            formDetailsData = JSON.parse(formDetailsData);
+        // #region GSTR3B
+        /**
+         * Generates GSTR3B PDF (see https://return.gst.gov.in/returns/auth/gstr3b)
+         * 
+         * This function emulates $scope.getGSTR3BSummary and $scope.downloadPdf functions from https://returnstatic.gst.gov.in/uiassets/js/returns/gstr3bctrl.js.
+         * 
+         * @param rtn_prd               Return period [<MMYYYY>]
+         * @param status                Return status [FIL/NF]
+         * @param gstr3bSummaryData     Response json from "https://return.gst.gov.in/returns/auth/api/gstr3b/summary?rtn_prd=<rtn_prd>" [<JSON>]
+         * @param taxPayableData        Response json from "https://return.gst.gov.in//returns/auth/api/gstr3b/taxpayble?rtn_prd=<rtn_prd>" [<JSON>]
+         * @param formDetailsData       Response json from "https://return.gst.gov.in/returns/auth/api/formdetails?rtn_prd=<rtn_prd>&rtn_typ=GSTR3B" [<JSON>]
+         */
+        function generateGSTR3BPDF(rtn_prd, status, gstr3bSummaryData, taxPayableData, formDetailsData) {
+            shareData.rtn_prd = rtn_prd;
+            shareData.gstr3bSummary = (typeof gstr3bSummaryData == "object" ? gstr3bSummaryData : JSON.parse(gstr3bSummaryData)).data;
 
-            gstr3bSummary = gstr3bSummaryData.data;
-            taxPayableResponse = taxPayableData;
-            formDetails = formDetailsData.data;
+            var filing_stat = status;
 
-            // Calculate Summary
-            gstr3bScope.totalItx_iosup = 0.0, gstr3bScope.totalCtx_iosup = 0.0, gstr3bScope.totalStx_iosup = 0.0, gstr3bScope.totalCs_iosup = 0.0;
-            gstr3bScope.totalTxVal_intersup = 0.0, gstr3bScope.totalItx_intersup = 0.0;
-            gstr3bScope.totalItx_elgITC = 0.0, gstr3bScope.totalCtx_elgITC = 0.0, gstr3bScope.totalStx_elgITC = 0.0, gstr3bScope.totalCs_elgITC = 0.0;
-            gstr3bScope.totalTxInterSS_inwsup = 0.0, gstr3bScope.totalIntraSS_inwsup = 0.0;
-            gstr3bScope.totalItx_interestLtfee = 0.0, gstr3bScope.totalCtx_interestLtfee = 0.0, gstr3bScope.totalStx_interestLtfee = 0.0, gstr3bScope.totalCs_interestLtfee = 0.0;
-            gstr3bScope.totalTxlib_pmt = 0.0, gstr3bScope.totalCashpd_pmt = 0.0, gstr3bScope.totalITCpd_pmt = 0.0;
-            gstr3bScope.totalItx_tdstcs = 0.0, gstr3bScope.totalCtx_tdstcs = 0.0, gstr3bScope.totalStx_tdstcs = 0.0;
+            var response = typeof formDetailsData == "object" ? formDetailsData : JSON.parse(formDetailsData);
+            var formDetails = response.data;
+            // #region Form Details
+            $scope.user = response.data.user;
+            $scope.main_page_gstin = shareData.gstin = formDetails.gstin;
+            $scope.filing = shareData.fil_stat = formDetails.status;
+            shareData.approval_dt = formDetails.apprv_dt;
+            $scope.retprd = shareData.retprd = formDetails.fm;
+            $scope.bus_name = shareData.business_name = formDetails.ln;
+            $scope.finyr = shareData.disyear = formDetails.fy;
+            $scope.due_dt = shareData.due_date = formDetails.due_dt;
+            $scope.evc_chk = shareData.evc_chk = formDetails.evc_chk;
+            if (formDetails.status !== "NF" && formDetails.status !== "ER") {
+                $scope.disableAll3BF = true;
+                $scope.disable3BSub = true;
+            }
+            if (formDetails.status != "NF") {
+                $scope.showtiles = true;
+            }
+            // #endregion
+
+            // #region $scope.calculateSummary
+            $scope.totalItx_iosup = 0.0, $scope.totalCtx_iosup = 0.0, $scope.totalStx_iosup = 0.0, $scope.totalCs_iosup = 0.0;
+            $scope.totalTxVal_intersup = 0.0, $scope.totalItx_intersup = 0.0;
+            $scope.totalItx_elgITC = 0.0, $scope.totalCtx_elgITC = 0.0, $scope.totalStx_elgITC = 0.0, $scope.totalCs_elgITC = 0.0;
+            $scope.totalTxInterSS_inwsup = 0.0, $scope.totalIntraSS_inwsup = 0.0;
+            $scope.totalItx_interestLtfee = 0.0, $scope.totalCtx_interestLtfee = 0.0, $scope.totalStx_interestLtfee = 0.0, $scope.totalCs_interestLtfee = 0.0;
+            $scope.totalTxlib_pmt = 0.0, $scope.totalCashpd_pmt = 0.0, $scope.totalITCpd_pmt = 0.0;
+            $scope.totalItx_tdstcs = 0.0, $scope.totalCtx_tdstcs = 0.0, $scope.totalStx_tdstcs = 0.0;
             //3.1
-            if (gstr3bSummary.sup_details) {
-                gstr3bScope.totalItx_iosup = parseFloat(gstr3bSummary.sup_details.osup_det.iamt)
-                    + parseFloat(gstr3bSummary.sup_details.osup_zero.iamt)
-                    + parseFloat(gstr3bSummary.sup_details.isup_rev.iamt);
-                gstr3bScope.totalCtx_iosup = parseFloat(gstr3bSummary.sup_details.osup_det.camt)
-                    + parseFloat(gstr3bSummary.sup_details.isup_rev.camt);
-                gstr3bScope.totalStx_iosup = parseFloat(gstr3bSummary.sup_details.osup_det.samt)
-                    + parseFloat(gstr3bSummary.sup_details.isup_rev.samt);
-                gstr3bScope.totalCs_iosup = parseFloat(gstr3bSummary.sup_details.osup_det.csamt)
-                    + parseFloat(gstr3bSummary.sup_details.osup_zero.csamt)
-                    + parseFloat(gstr3bSummary.sup_details.isup_rev.csamt);
+            if (shareData.gstr3bSummary.sup_details) {
+                $scope.totalItx_iosup = parseFloat(shareData.gstr3bSummary.sup_details.osup_det.iamt)
+                    + parseFloat(shareData.gstr3bSummary.sup_details.osup_zero.iamt)
+                    + parseFloat(shareData.gstr3bSummary.sup_details.isup_rev.iamt);
+                $scope.totalCtx_iosup = parseFloat(shareData.gstr3bSummary.sup_details.osup_det.camt)
+                    + parseFloat(shareData.gstr3bSummary.sup_details.isup_rev.camt);
+                $scope.totalStx_iosup = parseFloat(shareData.gstr3bSummary.sup_details.osup_det.samt)
+                    + parseFloat(shareData.gstr3bSummary.sup_details.isup_rev.samt);
+                $scope.totalCs_iosup = parseFloat(shareData.gstr3bSummary.sup_details.osup_det.csamt)
+                    + parseFloat(shareData.gstr3bSummary.sup_details.osup_zero.csamt)
+                    + parseFloat(shareData.gstr3bSummary.sup_details.isup_rev.csamt);
             }
 
             //3.2
-            if (gstr3bSummary.inter_sup) {
-                gstr3bScope.totalTxVal_intersup = 0.0, gstr3bScope.totalItx_intersup = 0.0;
-                $.each(gstr3bSummary.inter_sup, function (value, key) {
+            if (shareData.gstr3bSummary.inter_sup) {
+                $scope.totalTxVal_intersup = 0.0, $scope.totalItx_intersup = 0.0;
+                angular.forEach(shareData.gstr3bSummary.inter_sup, function (value, key) {
                     //console.log(key + ': ' + value);
                     if (!value.empty) {
-                        $.each(value, function (val, label) {
-                            gstr3bScope.totalTxVal_intersup = gstr3bScope.totalTxVal_intersup + parseFloat(val.txval);
-                            gstr3bScope.totalItx_intersup = gstr3bScope.totalItx_intersup + parseFloat(val.iamt);
+                        angular.forEach(value, function (val, label) {
+                            $scope.totalTxVal_intersup = $scope.totalTxVal_intersup + parseFloat(val.txval);
+                            $scope.totalItx_intersup = $scope.totalItx_intersup + parseFloat(val.iamt);
                         });
                     }
                 });
             }
 
             //4
-            gstr3bScope.totalItx_elgITC = 0.0, gstr3bScope.totalCtx_elgITC = 0.0, gstr3bScope.totalStx_elgITC = 0.0, gstr3bScope.totalCs_elgITC = 0.0;
-            $.each(gstr3bSummary.itc_elg, function (val, key) {
-                if (key == 'itc_avl') {
-                    $.each(val, function (obj) {
-                        gstr3bScope.totalItx_elgITC += parseFloat(obj.iamt);
-                        gstr3bScope.totalCtx_elgITC += parseFloat(obj.camt);
-                        gstr3bScope.totalStx_elgITC += parseFloat(obj.samt);
-                        gstr3bScope.totalCs_elgITC += parseFloat(obj.csamt);
+            $scope.totalItx_elgITC = 0.0, $scope.totalCtx_elgITC = 0.0, $scope.totalStx_elgITC = 0.0, $scope.totalCs_elgITC = 0.0;
+            angular.forEach(shareData.gstr3bSummary.itc_elg, function (val, key) {
+                if (angular.equals(key, 'itc_avl')) {
+                    angular.forEach(val, function (obj) {
+                        $scope.totalItx_elgITC += parseFloat(obj.iamt);
+                        $scope.totalCtx_elgITC += parseFloat(obj.camt);
+                        $scope.totalStx_elgITC += parseFloat(obj.samt);
+                        $scope.totalCs_elgITC += parseFloat(obj.csamt);
                     });
-                } else if (key == 'itc_rev') {
-                    $.each(val, function (obj) {
-                        gstr3bScope.totalItx_elgITC -= parseFloat(obj.iamt);
-                        gstr3bScope.totalCtx_elgITC -= parseFloat(obj.camt);
-                        gstr3bScope.totalStx_elgITC -= parseFloat(obj.samt);
-                        gstr3bScope.totalCs_elgITC -= parseFloat(obj.csamt);
+                } else if (angular.equals(key, 'itc_rev')) {
+                    angular.forEach(val, function (obj) {
+                        $scope.totalItx_elgITC -= parseFloat(obj.iamt);
+                        $scope.totalCtx_elgITC -= parseFloat(obj.camt);
+                        $scope.totalStx_elgITC -= parseFloat(obj.samt);
+                        $scope.totalCs_elgITC -= parseFloat(obj.csamt);
                     });
                 }
             });
 
             //5
-            if (gstr3bSummary.inward_sup) {
-                gstr3bScope.totalTxInterSS_inwsup = 0.0, gstr3bScope.totalIntraSS_inwsup = 0.0;
-                $.each(gstr3bSummary.inward_sup.isup_details, function (obj) {
-                    gstr3bScope.totalTxInterSS_inwsup += parseFloat(obj.inter);
-                    gstr3bScope.totalIntraSS_inwsup += parseFloat(obj.intra);
+            if (shareData.gstr3bSummary.inward_sup) {
+                $scope.totalTxInterSS_inwsup = 0.0, $scope.totalIntraSS_inwsup = 0.0;
+                angular.forEach(shareData.gstr3bSummary.inward_sup.isup_details, function (obj) {
+                    $scope.totalTxInterSS_inwsup += parseFloat(obj.inter);
+                    $scope.totalIntraSS_inwsup += parseFloat(obj.intra);
                 });
             }
 
             //5.1
-            if (gstr3bSummary.intr_ltfee) {
+            if (shareData.gstr3bSummary.intr_ltfee) {
                 var intr_iamt = 0.0, intr_camt = 0.0, intr_samt = 0.0, intr_csamt = 0.0, fee_camt = 0.0, fee_samt = 0.0;
-                if (gstr3bSummary.intr_ltfee.intr_details) {
-                    intr_iamt = parseFloat(gstr3bSummary.intr_ltfee.intr_details.iamt || 0.0);
-                    intr_camt = parseFloat(gstr3bSummary.intr_ltfee.intr_details.camt || 0.0);
-                    intr_samt = parseFloat(gstr3bSummary.intr_ltfee.intr_details.samt || 0.0);
-                    intr_csamt = parseFloat(gstr3bSummary.intr_ltfee.intr_details.csamt || 0.0);
+                if (shareData.gstr3bSummary.intr_ltfee.intr_details) {
+                    intr_iamt = parseFloat(shareData.gstr3bSummary.intr_ltfee.intr_details.iamt || 0.0);
+                    intr_camt = parseFloat(shareData.gstr3bSummary.intr_ltfee.intr_details.camt || 0.0);
+                    intr_samt = parseFloat(shareData.gstr3bSummary.intr_ltfee.intr_details.samt || 0.0);
+                    intr_csamt = parseFloat(shareData.gstr3bSummary.intr_ltfee.intr_details.csamt || 0.0);
                 }
-                if (gstr3bSummary.intr_ltfee.ltfee_details) {
-                    fee_camt = parseFloat(gstr3bSummary.intr_ltfee.ltfee_details.camt || 0.0);
-                    fee_samt = parseFloat(gstr3bSummary.intr_ltfee.ltfee_details.samt || 0.0);
+                if (shareData.gstr3bSummary.intr_ltfee.ltfee_details) {
+                    fee_camt = parseFloat(shareData.gstr3bSummary.intr_ltfee.ltfee_details.camt || 0.0);
+                    fee_samt = parseFloat(shareData.gstr3bSummary.intr_ltfee.ltfee_details.samt || 0.0);
                 }
 
-                gstr3bScope.totalItx_interestLtfee = intr_iamt;
-                gstr3bScope.totalCtx_interestLtfee = intr_camt + fee_camt;
-                gstr3bScope.totalStx_interestLtfee = intr_samt + fee_samt;
-                gstr3bScope.totalCs_interestLtfee = intr_csamt;
+                $scope.totalItx_interestLtfee = intr_iamt;
+                $scope.totalCtx_interestLtfee = intr_camt + fee_camt;
+                $scope.totalStx_interestLtfee = intr_samt + fee_samt;
+                $scope.totalCs_interestLtfee = intr_csamt;
             }
 
             //6
-            gstr3bScope.totalTxlib_pmt = 0.0;
-            gstr3bScope.totalCashpd_pmt = 0.0;
-            gstr3bScope.totalITCpd_pmt = 0.0;
-            if (gstr3bSummary.tt_val) {
-                gstr3bScope.totalTxlib_pmt = parseFloat(gstr3bSummary.tt_val.tt_pay);
-                gstr3bScope.totalCashpd_pmt = parseFloat(gstr3bSummary.tt_val.tt_csh_pd);
-                gstr3bScope.totalITCpd_pmt = parseFloat(gstr3bSummary.tt_val.tt_itc_pd);
+            $scope.totalTxlib_pmt = 0.0;
+            $scope.totalCashpd_pmt = 0.0;
+            $scope.totalITCpd_pmt = 0.0;
+            if (shareData.gstr3bSummary.tt_val) {
+                $scope.totalTxlib_pmt = parseFloat(shareData.gstr3bSummary.tt_val.tt_pay);
+                $scope.totalCashpd_pmt = parseFloat(shareData.gstr3bSummary.tt_val.tt_csh_pd);
+                $scope.totalITCpd_pmt = parseFloat(shareData.gstr3bSummary.tt_val.tt_itc_pd);
+            }
+            // #endregion
+
+            // #region $scope.downloadPdf
+            var status = filing_stat;
+            if (!status) {
+                status = $scope.filing;
             }
 
-            //downlaodPdf
-            gstr3bScope.osupTaxvl = 0.0,
-                gstr3bScope.osupIamt = 0.0,
-                gstr3bScope.osupCamt = 0.0,
-                gstr3bScope.osupSamt = 0.0,
-                gstr3bScope.osupCsamt = 0.0,
-                gstr3bScope.osupZeroRatedTxval = 0.0,
-                gstr3bScope.osupZeroRatedIamt = 0.0,
-                gstr3bScope.osupZeroRatedCsamt = 0.0,
-                gstr3bScope.osupNilTxval = 0.0,
-                gstr3bScope.isupRevTxval = 0.0,
-                gstr3bScope.isupRevIamt = 0.0,
-                gstr3bScope.isupRevCamt = 0.0,
-                gstr3bScope.isupRevSamt = 0.0,
-                gstr3bScope.isupRevCsamt = 0.0,
-                gstr3bScope.isupNongstTxval = 0.0,
-                gstr3bScope.intrestIamt = 0.0,
-                gstr3bScope.intrestCamt = 0.0,
-                gstr3bScope.intrestSamt = 0.0,
-                gstr3bScope.intrestCsamt = 0.0,
-                gstr3bScope.lateFeeCamt = 0.0,
-                gstr3bScope.lateFeeSamt = 0.0,
-                gstr3bScope.interSupUnregTotalTax = 0.0,
-                gstr3bScope.interSupUnregIntTax = 0.0,
-                gstr3bScope.interSupCompTotalTax = 0.0,
-                gstr3bScope.interSupCompIntTax = 0.0,
-                gstr3bScope.intersupUINTotalTax = 0.0,
-                gstr3bScope.intersupUINIntTax = 0.0,
-                gstr3bScope.avITCIamt = 0.0,
-                gstr3bScope.avITCCamt = 0.0,
-                gstr3bScope.avITCSamt = 0.0,
-                gstr3bScope.avITCCsamt = 0.0,
-                gstr3bScope.revITCIamt = 0.0,
-                gstr3bScope.revITCCamt = 0.0,
-                gstr3bScope.revITCSamt = 0.0,
-                gstr3bScope.revITCCsamt = 0.0,
-                gstr3bScope.netITCIamt = 0.0,
-                gstr3bScope.netITCCamt = 0.0,
-                gstr3bScope.netITCSamt = 0.0,
-                gstr3bScope.netITCCsamt = 0.0,
-                gstr3bScope.inlgITCIamt = 0.0,
-                gstr3bScope.inlgITCCamt = 0.0,
-                gstr3bScope.inlgITCSamt = 0.0,
-                gstr3bScope.inlgITCCsamt = 0.0,
-                gstr3bScope.insupCompInter = 0.0,
-                gstr3bScope.insupCompIntra = 0.0,
-                gstr3bScope.insupNonGstInter = 0.0,
-                gstr3bScope.insupNonGstIntra = 0.0,
-                gstr3bScope.taxPaidItcIgst_Igst_amt = 0.0,
-                gstr3bScope.taxPaidItcIgst_Cgst_amt = 0.0,
-                gstr3bScope.taxPaidItcIgst_Sgst_amt = 0.0,
-                gstr3bScope.taxPaidCashNonRevigsttx = 0.0,
-                gstr3bScope.taxPaidCashNonRevigstintr = 0.0,
-                gstr3bScope.taxPaidItcCgst_Igst_amt = 0.0,
-                gstr3bScope.taxPaidItcCgst_Cgst_amt = 0.0,
-                gstr3bScope.taxPaidCashNonRevcgsttx = 0.0,
-                gstr3bScope.taxPaidCashNonRevcgstintr = 0.0,
-                gstr3bScope.taxPaidCashNonRevcgstfee = 0.0,
-                gstr3bScope.taxPaidItcSgst_Igst_amt = 0.0,
-                gstr3bScope.taxPaidItcSgst_Sgst_amt = 0.0,
-                gstr3bScope.taxPaidCashNonRevsgsttx = 0.0,
-                gstr3bScope.taxPaidCashNonRevsgstintr = 0.0,
-                gstr3bScope.taxPaidCashNonRevsgstfee = 0.0,
-                gstr3bScope.taxPaidItcCess_Cess_amt = 0.0,
-                gstr3bScope.taxPaidCashNonRevcesstx = 0.0,
-                gstr3bScope.taxPaidCashNonRevcessintr = 0.0,
-                gstr3bScope.taxPaidCashRevigsttx = 0.0,
-                gstr3bScope.taxPaidCashRevcgsttx = 0.0,
-                gstr3bScope.taxPaidCashRevsgsttx = 0.0,
-                gstr3bScope.taxPaidCashRevcesstx = 0.0;
-            gstr3bScope.othRev_iamt = 0.0;
-            gstr3bScope.othRev_camt = 0.0;
-            gstr3bScope.othRev_samt = 0.0;
-            gstr3bScope.othRev_csamt = 0.0;
-            gstr3bScope.revrs_iamt = 0.0;
-            gstr3bScope.revrs_camt = 0.0;
-            gstr3bScope.revrs_samt = 0.0;
-            gstr3bScope.revrs_csamt = 0.0;
-            gstr3bScope.taxPaidCashNonRev = null;
-            gstr3bScope.taxPaidCashRev = null;
+            $scope.osupTaxvl = 0.0,
+                $scope.osupIamt = 0.0,
+                $scope.osupCamt = 0.0,
+                $scope.osupSamt = 0.0,
+                $scope.osupCsamt = 0.0,
+                $scope.osupZeroRatedTxval = 0.0,
+                $scope.osupZeroRatedIamt = 0.0,
+                $scope.osupZeroRatedCsamt = 0.0,
+                $scope.osupNilTxval = 0.0,
+                $scope.isupRevTxval = 0.0,
+                $scope.isupRevIamt = 0.0,
+                $scope.isupRevCamt = 0.0,
+                $scope.isupRevSamt = 0.0,
+                $scope.isupRevCsamt = 0.0,
+                $scope.isupNongstTxval = 0.0,
+                $scope.intrestIamt = 0.0,
+                $scope.intrestCamt = 0.0,
+                $scope.intrestSamt = 0.0,
+                $scope.intrestCsamt = 0.0,
+                $scope.lateFeeCamt = 0.0,
+                $scope.lateFeeSamt = 0.0,
+                $scope.interSupUnregTotalTax = 0.0,
+                $scope.interSupUnregIntTax = 0.0,
+                $scope.interSupCompTotalTax = 0.0,
+                $scope.interSupCompIntTax = 0.0,
+                $scope.intersupUINTotalTax = 0.0,
+                $scope.intersupUINIntTax = 0.0,
+                $scope.avITCIamt = 0.0,
+                $scope.avITCCamt = 0.0,
+                $scope.avITCSamt = 0.0,
+                $scope.avITCCsamt = 0.0,
+                $scope.revITCIamt = 0.0,
+                $scope.revITCCamt = 0.0,
+                $scope.revITCSamt = 0.0,
+                $scope.revITCCsamt = 0.0,
+                $scope.netITCIamt = 0.0,
+                $scope.netITCCamt = 0.0,
+                $scope.netITCSamt = 0.0,
+                $scope.netITCCsamt = 0.0,
+                $scope.inlgITCIamt = 0.0,
+                $scope.inlgITCCamt = 0.0,
+                $scope.inlgITCSamt = 0.0,
+                $scope.inlgITCCsamt = 0.0,
+                $scope.insupCompInter = 0.0,
+                $scope.insupCompIntra = 0.0,
+                $scope.insupNonGstInter = 0.0,
+                $scope.insupNonGstIntra = 0.0,
+                $scope.taxPaidItcIgst_Igst_amt = 0.0,
+                $scope.taxPaidItcIgst_Cgst_amt = 0.0,
+                $scope.taxPaidItcIgst_Sgst_amt = 0.0,
+                $scope.taxPaidCashNonRevigsttx = 0.0,
+                $scope.taxPaidCashNonRevigstintr = 0.0,
+                $scope.taxPaidItcCgst_Igst_amt = 0.0,
+                $scope.taxPaidItcCgst_Cgst_amt = 0.0,
+                $scope.taxPaidCashNonRevcgsttx = 0.0,
+                $scope.taxPaidCashNonRevcgstintr = 0.0,
+                $scope.taxPaidCashNonRevcgstfee = 0.0,
+                $scope.taxPaidItcSgst_Igst_amt = 0.0,
+                $scope.taxPaidItcSgst_Sgst_amt = 0.0,
+                $scope.taxPaidCashNonRevsgsttx = 0.0,
+                $scope.taxPaidCashNonRevsgstintr = 0.0,
+                $scope.taxPaidCashNonRevsgstfee = 0.0,
+                $scope.taxPaidItcCess_Cess_amt = 0.0,
+                $scope.taxPaidCashNonRevcesstx = 0.0,
+                $scope.taxPaidCashNonRevcessintr = 0.0,
+                $scope.taxPaidCashRevigsttx = 0.0,
+                $scope.taxPaidCashRevcgsttx = 0.0,
+                $scope.taxPaidCashRevsgsttx = 0.0,
+                $scope.taxPaidCashRevcesstx = 0.0;
+            $scope.othRev_iamt = 0.0;
+            $scope.othRev_camt = 0.0;
+            $scope.othRev_samt = 0.0;
+            $scope.othRev_csamt = 0.0;
+            $scope.revrs_iamt = 0.0;
+            $scope.revrs_camt = 0.0;
+            $scope.revrs_samt = 0.0;
+            $scope.revrs_csamt = 0.0;
             //table 3.1
-            if (gstr3bSummary.sup_details) {
-                if (gstr3bSummary.sup_details.osup_det) {
-                    gstr3bScope.osupTaxvl = gstr3bSummary.sup_details.osup_det.txval;
+            if (shareData.gstr3bSummary.sup_details) {
+                if (shareData.gstr3bSummary.sup_details.osup_det) {
+                    $scope.osupTaxvl = shareData.gstr3bSummary.sup_details.osup_det.txval;
                 }
-                if (gstr3bSummary.sup_details.osup_det) {
-                    gstr3bScope.osupIamt = gstr3bSummary.sup_details.osup_det.iamt;
+                if (shareData.gstr3bSummary.sup_details.osup_det) {
+                    $scope.osupIamt = shareData.gstr3bSummary.sup_details.osup_det.iamt;
                 }
-                if (gstr3bSummary.sup_details.osup_det) {
-                    gstr3bScope.osupCamt = gstr3bSummary.sup_details.osup_det.camt;
+                if (shareData.gstr3bSummary.sup_details.osup_det) {
+                    $scope.osupCamt = shareData.gstr3bSummary.sup_details.osup_det.camt;
                 }
-                if (gstr3bSummary.sup_details.osup_det) {
-                    gstr3bScope.osupSamt = gstr3bSummary.sup_details.osup_det.samt;
+                if (shareData.gstr3bSummary.sup_details.osup_det) {
+                    $scope.osupSamt = shareData.gstr3bSummary.sup_details.osup_det.samt;
                 }
-                if (gstr3bSummary.sup_details.osup_det) {
-                    gstr3bScope.osupCsamt = gstr3bSummary.sup_details.osup_det.csamt;
+                if (shareData.gstr3bSummary.sup_details.osup_det) {
+                    $scope.osupCsamt = shareData.gstr3bSummary.sup_details.osup_det.csamt;
                 }
-                if (gstr3bSummary.sup_details.osup_zero) {
-                    gstr3bScope.osupZeroRatedTxval = gstr3bSummary.sup_details.osup_zero.txval;
+                if (shareData.gstr3bSummary.sup_details.osup_zero) {
+                    $scope.osupZeroRatedTxval = shareData.gstr3bSummary.sup_details.osup_zero.txval;
                 }
-                if (gstr3bSummary.sup_details.osup_zero) {
-                    gstr3bScope.osupZeroRatedIamt = gstr3bSummary.sup_details.osup_zero.iamt;
+                if (shareData.gstr3bSummary.sup_details.osup_zero) {
+                    $scope.osupZeroRatedIamt = shareData.gstr3bSummary.sup_details.osup_zero.iamt;
                 }
-                if (gstr3bSummary.sup_details.osup_zero) {
-                    gstr3bScope.osupZeroRatedCsamt = gstr3bSummary.sup_details.osup_zero.csamt;
+                if (shareData.gstr3bSummary.sup_details.osup_zero) {
+                    $scope.osupZeroRatedCsamt = shareData.gstr3bSummary.sup_details.osup_zero.csamt;
                 }
-                if (gstr3bSummary.sup_details.osup_nil_exmp) {
-                    gstr3bScope.osupNilTxval = gstr3bSummary.sup_details.osup_nil_exmp.txval;
+                if (shareData.gstr3bSummary.sup_details.osup_nil_exmp) {
+                    $scope.osupNilTxval = shareData.gstr3bSummary.sup_details.osup_nil_exmp.txval;
                 }
-                if (gstr3bSummary.sup_details.isup_rev) {
-                    gstr3bScope.isupRevTxval = gstr3bSummary.sup_details.isup_rev.txval;
+                if (shareData.gstr3bSummary.sup_details.isup_rev) {
+                    $scope.isupRevTxval = shareData.gstr3bSummary.sup_details.isup_rev.txval;
                 }
-                if (gstr3bSummary.sup_details.isup_rev) {
-                    gstr3bScope.isupRevIamt = gstr3bSummary.sup_details.isup_rev.iamt;
+                if (shareData.gstr3bSummary.sup_details.isup_rev) {
+                    $scope.isupRevIamt = shareData.gstr3bSummary.sup_details.isup_rev.iamt;
                 }
-                if (gstr3bSummary.sup_details.isup_rev) {
-                    gstr3bScope.isupRevCamt = gstr3bSummary.sup_details.isup_rev.camt;
+                if (shareData.gstr3bSummary.sup_details.isup_rev) {
+                    $scope.isupRevCamt = shareData.gstr3bSummary.sup_details.isup_rev.camt;
                 }
-                if (gstr3bSummary.sup_details.isup_rev) {
-                    gstr3bScope.isupRevSamt = gstr3bSummary.sup_details.isup_rev.samt;
+                if (shareData.gstr3bSummary.sup_details.isup_rev) {
+                    $scope.isupRevSamt = shareData.gstr3bSummary.sup_details.isup_rev.samt;
                 }
-                if (gstr3bSummary.sup_details.isup_rev) {
-                    gstr3bScope.isupRevCsamt = gstr3bSummary.sup_details.isup_rev.csamt;
+                if (shareData.gstr3bSummary.sup_details.isup_rev) {
+                    $scope.isupRevCsamt = shareData.gstr3bSummary.sup_details.isup_rev.csamt;
                 }
-                if (gstr3bSummary.sup_details.osup_nongst) {
-                    gstr3bScope.isupNongstTxval = gstr3bSummary.sup_details.osup_nongst.txval;
+                if (shareData.gstr3bSummary.sup_details.osup_nongst) {
+                    $scope.isupNongstTxval = shareData.gstr3bSummary.sup_details.osup_nongst.txval;
                 }
 
             }
 
             //table 3.2
-            if (gstr3bSummary.intr_ltfee) {
-                if (gstr3bSummary.intr_ltfee.intr_details) {
-                    gstr3bScope.intrestIamt = gstr3bSummary.intr_ltfee.intr_details.iamt;
+            if (shareData.gstr3bSummary.intr_ltfee) {
+                if (shareData.gstr3bSummary.intr_ltfee.intr_details) {
+                    $scope.intrestIamt = shareData.gstr3bSummary.intr_ltfee.intr_details.iamt;
                 }
-                if (gstr3bSummary.intr_ltfee.intr_details) {
-                    gstr3bScope.intrestCamt = gstr3bSummary.intr_ltfee.intr_details.camt;
+                if (shareData.gstr3bSummary.intr_ltfee.intr_details) {
+                    $scope.intrestCamt = shareData.gstr3bSummary.intr_ltfee.intr_details.camt;
                 }
-                if (gstr3bSummary.intr_ltfee.intr_details) {
-                    gstr3bScope.intrestSamt = gstr3bSummary.intr_ltfee.intr_details.samt;
+                if (shareData.gstr3bSummary.intr_ltfee.intr_details) {
+                    $scope.intrestSamt = shareData.gstr3bSummary.intr_ltfee.intr_details.samt;
                 }
-                if (gstr3bSummary.intr_ltfee.intr_details) {
-                    gstr3bScope.intrestCsamt = gstr3bSummary.intr_ltfee.intr_details.csamt;
+                if (shareData.gstr3bSummary.intr_ltfee.intr_details) {
+                    $scope.intrestCsamt = shareData.gstr3bSummary.intr_ltfee.intr_details.csamt;
                 }
-                if (gstr3bSummary.intr_ltfee.ltfee_details) {
-                    gstr3bScope.lateFeeCamt = gstr3bSummary.intr_ltfee.ltfee_details.camt;
+                if (shareData.gstr3bSummary.intr_ltfee.ltfee_details) {
+                    $scope.lateFeeCamt = shareData.gstr3bSummary.intr_ltfee.ltfee_details.camt;
                 }
-                if (gstr3bSummary.intr_ltfee.ltfee_details) {
-                    gstr3bScope.lateFeeSamt = gstr3bSummary.intr_ltfee.ltfee_details.samt;
+                if (shareData.gstr3bSummary.intr_ltfee.ltfee_details) {
+                    $scope.lateFeeSamt = shareData.gstr3bSummary.intr_ltfee.ltfee_details.samt;
                 }
             }
 
             //table 4
-            if (gstr3bSummary.inter_sup) {
+            if (shareData.gstr3bSummary.inter_sup) {
 
-                $.each(gstr3bSummary.inter_sup, function (val, key) {
+                angular.forEach(shareData.gstr3bSummary.inter_sup, function (val, key) {
 
                     if (!val.empty) {
-                        if (key == 'unreg_details') {
-                            $.each(val, function (obj) {
-                                // $.each(value, function(val, label) {
-                                gstr3bScope.interSupUnregTotalTax += parseFloat(obj.txval.toString().replace('₹', '') || 0.0);
-                                gstr3bScope.interSupUnregIntTax += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
+                        if (angular.equals(key, 'unreg_details')) {
+                            angular.forEach(val, function (obj) {
+                                // angular.forEach(value, function(val, label) {
+                                $scope.interSupUnregTotalTax += parseFloat(obj.txval.toString().replace('₹', '') || 0.0);
+                                $scope.interSupUnregIntTax += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
                             });
                         }
                     }
                 });
-                $.each(gstr3bSummary.inter_sup, function (val, key) {
+                angular.forEach(shareData.gstr3bSummary.inter_sup, function (val, key) {
 
                     if (!val.empty) {
-                        if (key == 'comp_details') {
-                            $.each(val, function (obj) {
-                                // $.each(value, function(val, label) {
-                                gstr3bScope.interSupCompTotalTax += parseFloat(obj.txval.toString().replace('₹', '') || 0.0);
-                                gstr3bScope.interSupCompIntTax += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
+                        if (angular.equals(key, 'comp_details')) {
+                            angular.forEach(val, function (obj) {
+                                // angular.forEach(value, function(val, label) {
+                                $scope.interSupCompTotalTax += parseFloat(obj.txval.toString().replace('₹', '') || 0.0);
+                                $scope.interSupCompIntTax += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
                             });
                         }
                     }
                 });
-                $.each(gstr3bSummary.inter_sup, function (val, key) {
+                angular.forEach(shareData.gstr3bSummary.inter_sup, function (val, key) {
 
                     if (!val.empty) {
-                        if (key == 'uin_details') {
-                            $.each(val, function (obj) {
-                                //$.each(value, function(val, label) {
-                                gstr3bScope.intersupUINTotalTax += parseFloat(obj.txval.toString().replace('₹', '') || 0.0);
-                                gstr3bScope.intersupUINIntTax += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
+                        if (angular.equals(key, 'uin_details')) {
+                            angular.forEach(val, function (obj) {
+                                //angular.forEach(value, function(val, label) {
+                                $scope.intersupUINTotalTax += parseFloat(obj.txval.toString().replace('₹', '') || 0.0);
+                                $scope.intersupUINIntTax += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
                             });
                         }
                     }
@@ -719,130 +848,226 @@
 
             //table 5
 
-            if (gstr3bSummary.itc_elg) {
-                $.each(gstr3bSummary.itc_elg, function (val, key) {
-                    if (key == 'itc_avl') {
-                        $.each(val, function (obj) {
-                            gstr3bScope.avITCIamt += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
-                            gstr3bScope.avITCCamt += parseFloat(obj.camt.toString().replace('₹', '') || 0.0);
-                            gstr3bScope.avITCSamt += parseFloat(obj.samt.toString().replace('₹', '') || 0.0);
-                            gstr3bScope.avITCCsamt += parseFloat(obj.csamt.toString().replace('₹', '') || 0.0);
+            if (shareData.gstr3bSummary.itc_elg) {
+                angular.forEach(shareData.gstr3bSummary.itc_elg, function (val, key) {
+                    if (angular.equals(key, 'itc_avl')) {
+                        angular.forEach(val, function (obj) {
+                            $scope.avITCIamt += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
+                            $scope.avITCCamt += parseFloat(obj.camt.toString().replace('₹', '') || 0.0);
+                            $scope.avITCSamt += parseFloat(obj.samt.toString().replace('₹', '') || 0.0);
+                            $scope.avITCCsamt += parseFloat(obj.csamt.toString().replace('₹', '') || 0.0);
                         });
-                    } else if (key == 'itc_rev') {
-                        $.each(val, function (obj) {
-                            gstr3bScope.revITCIamt += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
-                            gstr3bScope.revITCCamt += parseFloat(obj.camt.toString().replace('₹', '') || 0.0);
-                            gstr3bScope.revITCSamt += parseFloat(obj.samt.toString().replace('₹', '') || 0.0);
-                            gstr3bScope.revITCCsamt += parseFloat(obj.csamt.toString().replace('₹', '') || 0.0);
+                    } else if (angular.equals(key, 'itc_rev')) {
+                        angular.forEach(val, function (obj) {
+                            $scope.revITCIamt += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
+                            $scope.revITCCamt += parseFloat(obj.camt.toString().replace('₹', '') || 0.0);
+                            $scope.revITCSamt += parseFloat(obj.samt.toString().replace('₹', '') || 0.0);
+                            $scope.revITCCsamt += parseFloat(obj.csamt.toString().replace('₹', '') || 0.0);
                         });
-                    } else if (key == 'itc_inelg') {
-                        $.each(val, function (obj) {
-                            gstr3bScope.inlgITCIamt += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
-                            gstr3bScope.inlgITCCamt += parseFloat(obj.camt.toString().replace('₹', '') || 0.0);
-                            gstr3bScope.inlgITCSamt += parseFloat(obj.samt.toString().replace('₹', '') || 0.0);
-                            gstr3bScope.inlgITCCsamt += parseFloat(obj.csamt.toString().replace('₹', '') || 0.0);
+                    } else if (angular.equals(key, 'itc_inelg')) {
+                        angular.forEach(val, function (obj) {
+                            $scope.inlgITCIamt += parseFloat(obj.iamt.toString().replace('₹', '') || 0.0);
+                            $scope.inlgITCCamt += parseFloat(obj.camt.toString().replace('₹', '') || 0.0);
+                            $scope.inlgITCSamt += parseFloat(obj.samt.toString().replace('₹', '') || 0.0);
+                            $scope.inlgITCCsamt += parseFloat(obj.csamt.toString().replace('₹', '') || 0.0);
                         });
                     }
-                    gstr3bScope.netITCIamt = (gstr3bScope.avITCIamt - gstr3bScope.revITCIamt);
-                    gstr3bScope.netITCCamt = (gstr3bScope.avITCCamt - gstr3bScope.revITCCamt);
-                    gstr3bScope.netITCSamt = (gstr3bScope.avITCSamt - gstr3bScope.revITCSamt);
-                    gstr3bScope.netITCCsamt = (gstr3bScope.avITCCsamt - gstr3bScope.revITCCsamt);
+                    $scope.netITCIamt = ($scope.avITCIamt - $scope.revITCIamt);
+                    $scope.netITCCamt = ($scope.avITCCamt - $scope.revITCCamt);
+                    $scope.netITCSamt = ($scope.avITCSamt - $scope.revITCSamt);
+                    $scope.netITCCsamt = ($scope.avITCCsamt - $scope.revITCCsamt);
 
 
 
                 });
             }
-            gstr3bScope.insupArrInter = [];
-            gstr3bScope.insupArrIntra = [];
+            $scope.insupArrInter = [];
+            $scope.insupArrIntra = [];
 
-            if (gstr3bSummary.inward_sup) {
-                $.each(gstr3bSummary.inward_sup.isup_details, function (obj) {
-                    gstr3bScope.insupArrInter.push(parseFloat(obj.inter));
-                    gstr3bScope.insupArrIntra.push(parseFloat(obj.intra));
+            if (shareData.gstr3bSummary.inward_sup) {
+                angular.forEach(shareData.gstr3bSummary.inward_sup.isup_details, function (obj) {
+                    $scope.insupArrInter.push(parseFloat(obj.inter));
+                    $scope.insupArrIntra.push(parseFloat(obj.intra));
                 });
-                gstr3bScope.insupCompInter = gstr3bScope.insupArrInter[0];
-                gstr3bScope.insupCompIntra = gstr3bScope.insupArrIntra[0];
-                gstr3bScope.insupNonGstInter = gstr3bScope.insupArrInter[1];
-                gstr3bScope.insupNonGstIntra = gstr3bScope.insupArrIntra[1];
+                $scope.insupCompInter = $scope.insupArrInter[0];
+                $scope.insupCompIntra = $scope.insupArrIntra[0];
+                $scope.insupNonGstInter = $scope.insupArrInter[1];
+                $scope.insupNonGstIntra = $scope.insupArrIntra[1];
 
             }
 
             //table 6.1
-            if (status != "NF" && gstr3bSummary && gstr3bSummary.qn && gstr3bSummary.qn.q1 === 'Y') {
-                createGstPdf(gstin, rtn_prd, formDetails);
+            if (status != "NF" && shareData.gstr3bSummary && shareData.gstr3bSummary.qn && shareData.gstr3bSummary.qn.q1 === 'Y') {
+                $scope.createGstPdf();
             }
             else if (status != "NF") {
-                if (taxPayableResponse.status == 1 && taxPayableResponse.data.status == 2) {
-                    gstr3bScope.emptyString = null;
-                    if (taxPayableResponse.data.returnsDbCdredList.tax_pay) {
-                        gstr3bScope.taxPayableNonRev = taxPayableResponse.data.returnsDbCdredList.tax_pay[0];
-                        gstr3bScope.taxPayableRev = taxPayableResponse.data.returnsDbCdredList.tax_pay[1];
-                    }
-                    if (taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash) {
-                        if (taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0]) {
-                            gstr3bScope.taxPaidCashNonRev = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0].trancd === 30002 ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0] : gstr3bScope.emptyString;
+                var response = taxPayableData;
 
-                            gstr3bScope.taxPaidCashRev = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0].trancd === 30003 ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0] : gstr3bScope.emptyString;
+                // $().blockPage(true);
+                if (response.status == 1 && response.data.status == 2) {
+                    $().blockPage(false);
+                    $scope.emptyString = null;
+                    if (response.data.returnsDbCdredList.tax_pay) {
+                        $scope.taxPayableNonRev = response.data.returnsDbCdredList.tax_pay[0];
+                        $scope.taxPayableRev = response.data.returnsDbCdredList.tax_pay[1];
+                    }
+                    if (response.data.returnsDbCdredList.tax_paid.pd_by_cash) {
+                        if (response.data.returnsDbCdredList.tax_paid.pd_by_cash[0]) {
+                            $scope.taxPaidCashNonRev = response.data.returnsDbCdredList.tax_paid.pd_by_cash[0].trancd === 30002 ? response.data.returnsDbCdredList.tax_paid.pd_by_cash[0] : $scope.emptyString;
+
+                            $scope.taxPaidCashRev = response.data.returnsDbCdredList.tax_paid.pd_by_cash[0].trancd === 30003 ? response.data.returnsDbCdredList.tax_paid.pd_by_cash[0] : $scope.emptyString;
                         }
 
-                        if (taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1]) {
+                        if (response.data.returnsDbCdredList.tax_paid.pd_by_cash[1]) {
 
-                            gstr3bScope.taxPaidCashNonRev = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1].trancd === 30002 ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1] : gstr3bScope.emptyString;
+                            $scope.taxPaidCashNonRev = response.data.returnsDbCdredList.tax_paid.pd_by_cash[1].trancd === 30002 ? response.data.returnsDbCdredList.tax_paid.pd_by_cash[1] : $scope.emptyString;
 
-                            gstr3bScope.taxPaidCashRev = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1].trancd === 30003 ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1] : gstr3bScope.emptyString;
+                            $scope.taxPaidCashRev = response.data.returnsDbCdredList.tax_paid.pd_by_cash[1].trancd === 30003 ? response.data.returnsDbCdredList.tax_paid.pd_by_cash[1] : $scope.emptyString;
                         }
 
-                        if (taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1]) {
+                        if (response.data.returnsDbCdredList.tax_paid.pd_by_cash[0] && response.data.returnsDbCdredList.tax_paid.pd_by_cash[1]) {
 
-                            gstr3bScope.taxPaidCashNonRev = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0].trancd === 30002 ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0] : taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1];
+                            $scope.taxPaidCashNonRev = response.data.returnsDbCdredList.tax_paid.pd_by_cash[0].trancd === 30002 ? response.data.returnsDbCdredList.tax_paid.pd_by_cash[0] : response.data.returnsDbCdredList.tax_paid.pd_by_cash[1];
 
-                            gstr3bScope.taxPaidCashRev = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0].trancd === 30003 ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[0] : taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_cash[1];
+                            $scope.taxPaidCashRev = response.data.returnsDbCdredList.tax_paid.pd_by_cash[0].trancd === 30003 ? response.data.returnsDbCdredList.tax_paid.pd_by_cash[0] : response.data.returnsDbCdredList.tax_paid.pd_by_cash[1];
                         }
                     }
-                    if (Object.keys(taxPayableResponse.data.returnsDbCdredList.tax_paid).length > 0 && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc) {
-                        gstr3bScope.taxPaidItc = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] : 0;
-                        gstr3bScope.taxPaidItcIgst_Igst_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_igst_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_igst_amt : 0;
-                        gstr3bScope.taxPaidItcIgst_Cgst_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_cgst_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_cgst_amt : 0;
-                        gstr3bScope.taxPaidItcIgst_Sgst_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_sgst_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_sgst_amt : 0;
+                    if (Object.keys(response.data.returnsDbCdredList.tax_paid).length > 0 && response.data.returnsDbCdredList.tax_paid.pd_by_itc) {
+                        $scope.taxPaidItc = response.data.returnsDbCdredList.tax_paid.pd_by_itc && response.data.returnsDbCdredList.tax_paid.pd_by_itc[0] ? response.data.returnsDbCdredList.tax_paid.pd_by_itc[0] : 0;
+                        $scope.taxPaidItcIgst_Igst_amt = response.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_igst_amt ? response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_igst_amt : 0;
+                        $scope.taxPaidItcIgst_Cgst_amt = response.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_cgst_amt ? response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_cgst_amt : 0;
+                        $scope.taxPaidItcIgst_Sgst_amt = response.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_sgst_amt ? response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].igst_sgst_amt : 0;
 
-                        gstr3bScope.taxPaidItcCgst_Igst_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cgst_igst_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cgst_igst_amt : 0;
-                        gstr3bScope.taxPaidItcCgst_Cgst_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cgst_cgst_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cgst_cgst_amt : 0;
+                        $scope.taxPaidItcCgst_Igst_amt = response.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cgst_igst_amt ? response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cgst_igst_amt : 0;
+                        $scope.taxPaidItcCgst_Cgst_amt = response.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cgst_cgst_amt ? response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cgst_cgst_amt : 0;
 
-                        gstr3bScope.taxPaidItcSgst_Igst_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].sgst_igst_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].sgst_igst_amt : 0;
-                        gstr3bScope.taxPaidItcSgst_Sgst_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].sgst_sgst_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].sgst_sgst_amt : 0;
+                        $scope.taxPaidItcSgst_Igst_amt = response.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].sgst_igst_amt ? response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].sgst_igst_amt : 0;
+                        $scope.taxPaidItcSgst_Sgst_amt = response.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].sgst_sgst_amt ? response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].sgst_sgst_amt : 0;
 
-                        gstr3bScope.taxPaidItcCess_Cess_amt = taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cess_cess_amt ? taxPayableResponse.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cess_cess_amt : 0;
+                        $scope.taxPaidItcCess_Cess_amt = response.data.returnsDbCdredList.tax_paid.pd_by_itc[0] && response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cess_cess_amt ? response.data.returnsDbCdredList.tax_paid.pd_by_itc[0].cess_cess_amt : 0;
                     }
-                    if (gstr3bScope.taxPaidCashNonRev != null) {
-                        gstr3bScope.taxPaidCashNonRevigsttx = gstr3bScope.taxPaidCashNonRev.igst.tx;
-                        gstr3bScope.taxPaidCashNonRevigstintr = gstr3bScope.taxPaidCashNonRev.igst.intr;
-                        gstr3bScope.taxPaidCashNonRevcgsttx = gstr3bScope.taxPaidCashNonRev.cgst.tx;
-                        gstr3bScope.taxPaidCashNonRevcgstintr = gstr3bScope.taxPaidCashNonRev.cgst.intr;
-                        gstr3bScope.taxPaidCashNonRevcgstfee = gstr3bScope.taxPaidCashNonRev.cgst.fee;
-                        gstr3bScope.taxPaidCashNonRevsgsttx = gstr3bScope.taxPaidCashNonRev.sgst.tx;
-                        gstr3bScope.taxPaidCashNonRevsgstintr = gstr3bScope.taxPaidCashNonRev.sgst.intr;
-                        gstr3bScope.taxPaidCashNonRevsgstfee = gstr3bScope.taxPaidCashNonRev.sgst.fee;
-                        gstr3bScope.taxPaidCashNonRevcesstx = gstr3bScope.taxPaidCashNonRev.cess.tx;
-                        gstr3bScope.taxPaidCashNonRevcessintr = gstr3bScope.taxPaidCashNonRev.cess.intr;
+                    if ($scope.taxPaidCashNonRev != null) {
+                        $scope.taxPaidCashNonRevigsttx = $scope.taxPaidCashNonRev.igst.tx;
+                    } else {
+                        $scope.taxPaidCashNonRevigsttx = 0.0;
                     }
-                    if (gstr3bScope.taxPaidCashRev != null) {
-                        gstr3bScope.taxPaidCashRevigsttx = gstr3bScope.taxPaidCashRev.igst.tx;
-                        gstr3bScope.taxPaidCashRevcgsttx = gstr3bScope.taxPaidCashRev.cgst.tx;
-                        gstr3bScope.taxPaidCashRevsgsttx = gstr3bScope.taxPaidCashRev.sgst.tx;
-                        gstr3bScope.taxPaidCashRevcesstx = gstr3bScope.taxPaidCashRev.cess.tx;
+                    if ($scope.taxPaidCashNonRev != null) {
+                        $scope.taxPaidCashNonRevigstintr = $scope.taxPaidCashNonRev.igst.intr;
+                    } else {
+                        $scope.taxPaidCashNonRevigstintr = 0.0;
                     }
-                    createGstPdf(gstin, rtn_prd, formDetails);
+
+                    if ($scope.taxPaidCashNonRev != null) {
+                        $scope.taxPaidCashNonRevcgsttx = $scope.taxPaidCashNonRev.cgst.tx;
+                    } else {
+                        $scope.taxPaidCashNonRevcgsttx = 0.0;
+                    }
+                    if ($scope.taxPaidCashNonRev != null) {
+                        $scope.taxPaidCashNonRevcgstintr = $scope.taxPaidCashNonRev.cgst.intr;
+                    } else {
+                        $scope.taxPaidCashNonRevcgstintr = 0.0;
+                    }
+                    if ($scope.taxPaidCashNonRev != null) {
+                        $scope.taxPaidCashNonRevcgstfee = $scope.taxPaidCashNonRev.cgst.fee;
+                    } else {
+                        $scope.taxPaidCashNonRevcgstfee = 0.0;
+                    }
+
+                    if ($scope.taxPaidCashNonRev != null) {
+                        $scope.taxPaidCashNonRevsgsttx = $scope.taxPaidCashNonRev.sgst.tx;
+                    } else {
+                        $scope.taxPaidCashNonRevsgsttx = 0.0;
+                    }
+                    if ($scope.taxPaidCashNonRev != null) {
+                        $scope.taxPaidCashNonRevsgstintr = $scope.taxPaidCashNonRev.sgst.intr;
+                    } else {
+                        $scope.taxPaidCashNonRevsgstintr = 0.0;
+                    }
+                    if ($scope.taxPaidCashNonRev != null) {
+                        $scope.taxPaidCashNonRevsgstfee = $scope.taxPaidCashNonRev.sgst.fee;
+                    } else {
+                        $scope.taxPaidCashNonRevsgstfee = 0.0;
+                    }
+
+                    if ($scope.taxPaidCashNonRev != null) {
+                        $scope.taxPaidCashNonRevcesstx = $scope.taxPaidCashNonRev.cess.tx;
+                    } else {
+                        $scope.taxPaidCashNonRevcesstx = 0.0;
+                    }
+                    if ($scope.taxPaidCashNonRev != null) {
+                        $scope.taxPaidCashNonRevcessintr = $scope.taxPaidCashNonRev.cess.intr;
+                    } else {
+                        $scope.taxPaidCashNonRevcessintr = 0.0;
+                    }
+                    if ($scope.taxPaidCashRev != null) {
+                        $scope.taxPaidCashRevigsttx = $scope.taxPaidCashRev.igst.tx;
+                    } else {
+                        $scope.taxPaidCashRevigsttx = 0.0;
+                    }
+
+                    if ($scope.taxPaidCashRev != null) {
+                        $scope.taxPaidCashRevcgsttx = $scope.taxPaidCashRev.cgst.tx;
+                    } else {
+                        $scope.taxPaidCashRevcgsttx = 0.0;
+                    }
+                    if ($scope.taxPaidCashRev != null) {
+                        $scope.taxPaidCashRevsgsttx = $scope.taxPaidCashRev.sgst.tx;
+                    } else {
+                        $scope.taxPaidCashRevsgsttx = 0.0;
+                    }
+                    if ($scope.taxPaidCashRev != null) {
+                        $scope.taxPaidCashRevcesstx = $scope.taxPaidCashRev.cess.tx;
+                    } else {
+                        $scope.taxPaidCashRevcesstx = 0.0;
+                    }
+                    $scope.createGstPdf();
                 } else {
-                    createGstPdf(gstin, rtn_prd, formDetails);
-                    gstr3bScope.noLiab = true;
+                    //  $().blockPage(false);
+                    $scope.createGstPdf();
+                    $scope.noLiab = true;
                 }
+            } else if (status === "NF") {
+
+                if (shareData.gstr3bSummary.sup_details && shareData.gstr3bSummary.sup_details.osup_det) {
+                    $scope.othRev_iamt = (shareData.gstr3bSummary.sup_details.osup_det.iamt ? shareData.gstr3bSummary.sup_details.osup_det.iamt : 0) + (shareData.gstr3bSummary.sup_details.osup_zero.iamt ? shareData.gstr3bSummary.sup_details.osup_zero.iamt : 0);
+                    $scope.othRev_camt = (shareData.gstr3bSummary.sup_details.osup_det.camt ? shareData.gstr3bSummary.sup_details.osup_det.camt : 0) + (shareData.gstr3bSummary.sup_details.osup_zero.camt ? shareData.gstr3bSummary.sup_details.osup_zero.camt : 0);
+                    $scope.othRev_samt = (shareData.gstr3bSummary.sup_details.osup_det.samt ? shareData.gstr3bSummary.sup_details.osup_det.samt : 0) + (shareData.gstr3bSummary.sup_details.osup_zero.samt ? shareData.gstr3bSummary.sup_details.osup_zero.samt : 0);
+                    $scope.othRev_csamt = (shareData.gstr3bSummary.sup_details.osup_det.csamt ? shareData.gstr3bSummary.sup_details.osup_det.csamt : 0) + (shareData.gstr3bSummary.sup_details.osup_zero.csamt ? shareData.gstr3bSummary.sup_details.osup_zero.csamt : 0);
+                }
+                if (shareData.gstr3bSummary.itc_elg && shareData.gstr3bSummary.itc_elg.itc_net) {
+                    if (shareData.gstr3bSummary.itc_elg.itc_net.iamt && shareData.gstr3bSummary.itc_elg.itc_net.iamt < 0) {
+                        $scope.othRev_iamt = ($scope.othRev_iamt - (shareData.gstr3bSummary.itc_elg.itc_net.iamt));
+                    }
+                    if (shareData.gstr3bSummary.itc_elg.itc_net.camt && shareData.gstr3bSummary.itc_elg.itc_net.camt < 0) {
+                        $scope.othRev_camt = ($scope.othRev_camt - (shareData.gstr3bSummary.itc_elg.itc_net.camt));
+                    }
+                    if (shareData.gstr3bSummary.itc_elg.itc_net.samt && shareData.gstr3bSummary.itc_elg.itc_net.samt < 0) {
+                        $scope.othRev_samt = ($scope.othRev_samt - (shareData.gstr3bSummary.itc_elg.itc_net.samt));
+                    }
+                    if (shareData.gstr3bSummary.itc_elg.itc_net.csamt && shareData.gstr3bSummary.itc_elg.itc_net.csamt < 0) {
+                        $scope.othRev_csamt = ($scope.othRev_csamt - (shareData.gstr3bSummary.itc_elg.itc_net.samt));
+                    }
+                }
+
+
+                if (shareData.gstr3bSummary.sup_details && shareData.gstr3bSummary.sup_details.isup_rev) {
+                    $scope.revrs_iamt = (shareData.gstr3bSummary.sup_details.isup_rev.iamt ? shareData.gstr3bSummary.sup_details.isup_rev.iamt : 0.0);
+                    $scope.revrs_camt = (shareData.gstr3bSummary.sup_details.isup_rev.camt ? shareData.gstr3bSummary.sup_details.isup_rev.camt : 0.0);
+                    $scope.revrs_samt = (shareData.gstr3bSummary.sup_details.isup_rev.samt ? shareData.gstr3bSummary.sup_details.isup_rev.samt : 0.0);
+                    $scope.revrs_csamt = (shareData.gstr3bSummary.sup_details.isup_rev.csamt ? shareData.gstr3bSummary.sup_details.isup_rev.csamt : 0.0);
+                }
+                $scope.createGstPdf();
+                $scope.noLiab = true;
             }
+            // #endregion
         }
 
-        function createGstPdf(gstin, rtn_prd, formDetails) {
-            var pdfname = 'GSTR3B_' + gstin + '_' + rtn_prd + ".pdf";
-            var text = "  FINAL ";
-
+        $scope.createGstPdf = function () {
+            var pdfname = 'GSTR3B_' + shareData.gstin + '_' + shareData.rtn_prd + ".pdf";
+            var text = "  DRAFT ";
+            if ($scope.filing === "FIL") {
+                text = "  FINAL ";
+            }
 
             var dd = {
                 pageSize: 'A4',
@@ -870,8 +1095,8 @@
                         table: {
                             widths: ['30%', 'auto'],
                             body: [
-                                ['Year', formDetails.fy],
-                                ['Month', formDetails.fm],
+                                ['Year', $scope.finyr],
+                                ['Month', $scope.retprd],
 
                             ]
                         }
@@ -881,8 +1106,8 @@
                         table: {
                             widths: ['65%', 'auto'],
                             body: [
-                                ['1. GSTIN', formDetails.gstin || '-'],
-                                ['2. Legal name of the registered person', formDetails.ln || '-'],
+                                ['1. GSTIN', shareData.gstin || '-'],
+                                ['2. Legal name of the registered person', $scope.bus_name || '-'],
                             ]
                         }
                     },
@@ -923,23 +1148,23 @@
                                 ],
                                 [
                                     '(a) Outward taxable supplies (other than zero rated, nil rated and exempted)', {
-                                        text: parseFloat(gstr3bScope.osupTaxvl).toFixed(2),
+                                        text: parseFloat($scope.osupTaxvl).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.osupIamt).toFixed(2),
+                                        text: parseFloat($scope.osupIamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.osupCamt).toFixed(2),
+                                        text: parseFloat($scope.osupCamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.osupSamt).toFixed(2),
+                                        text: parseFloat($scope.osupSamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.osupCsamt).toFixed(2),
+                                        text: parseFloat($scope.osupCsamt).toFixed(2),
                                         alignment: 'right'
                                     }
                                 ],
@@ -947,11 +1172,11 @@
                                 [
                                     '(b) Outward taxable supplies (zero rated)',
                                     {
-                                        text: parseFloat(gstr3bScope.osupZeroRatedTxval).toFixed(2),
+                                        text: parseFloat($scope.osupZeroRatedTxval).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.osupZeroRatedIamt).toFixed(2),
+                                        text: parseFloat($scope.osupZeroRatedIamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -963,7 +1188,7 @@
                                         alignment: 'center'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.osupZeroRatedCsamt).toFixed(2),
+                                        text: parseFloat($scope.osupZeroRatedCsamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                 ],
@@ -971,7 +1196,7 @@
                                 [
                                     '(c) Other outward supplies (Nil rated, exempted)',
                                     {
-                                        text: parseFloat(gstr3bScope.osupNilTxval).toFixed(2),
+                                        text: parseFloat($scope.osupNilTxval).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -994,30 +1219,30 @@
                                 [
                                     '(d) Inward supplies (liable to reverse charge)',
                                     {
-                                        text: parseFloat(gstr3bScope.isupRevTxval).toFixed(2),
+                                        text: parseFloat($scope.isupRevTxval).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.isupRevIamt).toFixed(2),
+                                        text: parseFloat($scope.isupRevIamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.isupRevCamt).toFixed(2),
+                                        text: parseFloat($scope.isupRevCamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.isupRevSamt).toFixed(2),
+                                        text: parseFloat($scope.isupRevSamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.isupRevCsamt).toFixed(2),
+                                        text: parseFloat($scope.isupRevCsamt).toFixed(2),
                                         alignment: 'right'
                                     }
                                 ],
                                 [
                                     '(e) Non-GST outward supplies',
                                     {
-                                        text: parseFloat(gstr3bScope.isupNongstTxval).toFixed(2),
+                                        text: parseFloat($scope.isupNongstTxval).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1065,33 +1290,33 @@
                                 [
                                     'Supplies made to Unregistered Persons',
                                     {
-                                        text: parseFloat(gstr3bScope.interSupUnregTotalTax).toFixed(2),
+                                        text: parseFloat($scope.interSupUnregTotalTax).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.interSupUnregIntTax).toFixed(2),
+                                        text: parseFloat($scope.interSupUnregIntTax).toFixed(2),
                                         alignment: 'right'
                                     }
                                 ],
                                 [
                                     'Supplies made to Composition Taxable Persons',
                                     {
-                                        text: parseFloat(gstr3bScope.interSupCompTotalTax).toFixed(2),
+                                        text: parseFloat($scope.interSupCompTotalTax).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.interSupCompIntTax).toFixed(2),
+                                        text: parseFloat($scope.interSupCompIntTax).toFixed(2),
                                         alignment: 'right'
                                     }
                                 ],
                                 [
                                     'Supplies made to UIN holders',
                                     {
-                                        text: parseFloat(gstr3bScope.intersupUINTotalTax).toFixed(2),
+                                        text: parseFloat($scope.intersupUINTotalTax).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.intersupUINIntTax).toFixed(2),
+                                        text: parseFloat($scope.intersupUINIntTax).toFixed(2),
                                         alignment: 'right'
                                     }
                                 ]
@@ -1131,76 +1356,76 @@
                                 [
                                     '(A) ITC Available',
                                     {
-                                        text: parseFloat(gstr3bScope.avITCIamt).toFixed(2),
+                                        text: parseFloat($scope.avITCIamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.avITCCamt).toFixed(2),
+                                        text: parseFloat($scope.avITCCamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.avITCSamt).toFixed(2),
+                                        text: parseFloat($scope.avITCSamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.avITCCsamt).toFixed(2),
+                                        text: parseFloat($scope.avITCCsamt).toFixed(2),
                                         alignment: 'right'
                                     }
                                 ],
                                 [
                                     '(B) ITC Reversed',
                                     {
-                                        text: parseFloat(gstr3bScope.revITCIamt).toFixed(2),
+                                        text: parseFloat($scope.revITCIamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.revITCCamt).toFixed(2),
+                                        text: parseFloat($scope.revITCCamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.revITCSamt).toFixed(2),
+                                        text: parseFloat($scope.revITCSamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.revITCCsamt).toFixed(2),
+                                        text: parseFloat($scope.revITCCsamt).toFixed(2),
                                         alignment: 'right'
                                     }
                                 ],
                                 [
                                     '(C) Net ITC Available (A) – (B)',
                                     {
-                                        text: parseFloat(gstr3bScope.netITCIamt).toFixed(2),
+                                        text: parseFloat($scope.netITCIamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.netITCCamt).toFixed(2),
+                                        text: parseFloat($scope.netITCCamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.netITCSamt).toFixed(2),
+                                        text: parseFloat($scope.netITCSamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.netITCCsamt).toFixed(2),
+                                        text: parseFloat($scope.netITCCsamt).toFixed(2),
                                         alignment: 'right'
                                     }
                                 ],
                                 [
                                     '(D) Ineligible ITC',
                                     {
-                                        text: parseFloat(gstr3bScope.inlgITCIamt).toFixed(2),
+                                        text: parseFloat($scope.inlgITCIamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.inlgITCCamt).toFixed(2),
+                                        text: parseFloat($scope.inlgITCCamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.inlgITCSamt).toFixed(2),
+                                        text: parseFloat($scope.inlgITCSamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.inlgITCCsamt).toFixed(2),
+                                        text: parseFloat($scope.inlgITCCsamt).toFixed(2),
                                         alignment: 'right'
                                     }
                                 ]
@@ -1233,22 +1458,22 @@
                                 [
                                     'From a supplier under composition scheme, Exempt and Nil rated supply',
                                     {
-                                        text: parseFloat(gstr3bScope.insupCompInter).toFixed(2),
+                                        text: parseFloat($scope.insupCompInter).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.insupCompIntra).toFixed(2),
+                                        text: parseFloat($scope.insupCompIntra).toFixed(2),
                                         alignment: 'right'
                                     }
                                 ],
                                 [
                                     'Non-GST supply',
                                     {
-                                        text: parseFloat(gstr3bScope.insupNonGstInter).toFixed(2),
+                                        text: parseFloat($scope.insupNonGstInter).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.insupNonGstIntra).toFixed(2),
+                                        text: parseFloat($scope.insupNonGstIntra).toFixed(2),
                                         alignment: 'right'
                                     }
                                 ]
@@ -1289,19 +1514,19 @@
                                 [
                                     'Interest',
                                     {
-                                        text: parseFloat(gstr3bScope.intrestIamt).toFixed(2),
+                                        text: parseFloat($scope.intrestIamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.intrestCamt).toFixed(2),
+                                        text: parseFloat($scope.intrestCamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.intrestSamt).toFixed(2),
+                                        text: parseFloat($scope.intrestSamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.intrestCsamt).toFixed(2),
+                                        text: parseFloat($scope.intrestCsamt).toFixed(2),
                                         alignment: 'right'
                                     }
                                 ],
@@ -1312,11 +1537,11 @@
                                         alignment: 'center'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.lateFeeCamt).toFixed(2),
+                                        text: parseFloat($scope.lateFeeCamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.lateFeeSamt).toFixed(2),
+                                        text: parseFloat($scope.lateFeeSamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1403,19 +1628,19 @@
                                 [
                                     'Integrated Tax',
                                     {
-                                        text: parseFloat(gstr3bScope.othRev_iamt).toFixed(2),
+                                        text: parseFloat($scope.othRev_iamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidItcIgst_Igst_amt).toFixed(2),
+                                        text: parseFloat($scope.taxPaidItcIgst_Igst_amt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidItcIgst_Cgst_amt).toFixed(2),
+                                        text: parseFloat($scope.taxPaidItcIgst_Cgst_amt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidItcIgst_Sgst_amt).toFixed(2),
+                                        text: parseFloat($scope.taxPaidItcIgst_Sgst_amt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1423,11 +1648,11 @@
                                         alignment: 'center'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevigsttx).toFixed(2),
+                                        text: parseFloat($scope.taxPaidCashNonRevigsttx).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevigstintr).toFixed(2),
+                                        text: parseFloat($scope.taxPaidCashNonRevigstintr).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1438,15 +1663,15 @@
                                 [
                                     'Central Tax',
                                     {
-                                        text: parseFloat(gstr3bScope.othRev_camt).toFixed(),
+                                        text: parseFloat($scope.othRev_camt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidItcCgst_Igst_amt).toFixed(2),
+                                        text: parseFloat($scope.taxPaidItcCgst_Igst_amt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidItcCgst_Cgst_amt).toFixed(2),
+                                        text: parseFloat($scope.taxPaidItcCgst_Cgst_amt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1458,34 +1683,26 @@
                                         alignment: 'center'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevcgsttx).toFixed(2),
+                                        text: parseFloat($scope.taxPaidCashNonRevcgsttx).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevcgstintr).toFixed(2),
+                                        text: parseFloat($scope.taxPaidCashNonRevcgstintr).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevcgstfee).toFixed(2),
+                                        text: parseFloat($scope.taxPaidCashNonRevcgstfee).toFixed(2),
                                         alignment: 'right'
                                     }
                                 ],
                                 [
                                     'State/UT Tax',
                                     {
-                                        text: parseFloat(gstr3bScope.othRev_samt).toFixed(2),
+                                        text: parseFloat($scope.othRev_samt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidItcSgst_Igst_amt).toFixed(2),
-                                        alignment: 'right'
-                                    },
-                                    {
-                                        text: '-',
-                                        alignment: 'center'
-                                    },
-                                    {
-                                        text: parseFloat(gstr3bScope.taxPaidItcSgst_Sgst_amt).toFixed(2),
+                                        text: parseFloat($scope.taxPaidItcSgst_Igst_amt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1493,22 +1710,30 @@
                                         alignment: 'center'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevsgsttx).toFixed(2),
+                                        text: parseFloat($scope.taxPaidItcSgst_Sgst_amt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevsgstintr).toFixed(2),
+                                        text: '-',
+                                        alignment: 'center'
+                                    },
+                                    {
+                                        text: parseFloat($scope.taxPaidCashNonRevsgsttx).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevsgstfee).toFixed(2),
+                                        text: parseFloat($scope.taxPaidCashNonRevsgstintr).toFixed(2),
+                                        alignment: 'right'
+                                    },
+                                    {
+                                        text: parseFloat($scope.taxPaidCashNonRevsgstfee).toFixed(2),
                                         alignment: 'right'
                                     }
                                 ],
                                 [
                                     'Cess',
                                     {
-                                        text: parseFloat(gstr3bScope.othRev_csamt).toFixed(2),
+                                        text: parseFloat($scope.othRev_csamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1524,15 +1749,15 @@
                                         alignment: 'center'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidItcCess_Cess_amt).toFixed(2),
+                                        text: parseFloat($scope.taxPaidItcCess_Cess_amt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevcesstx).toFixed(2),
+                                        text: parseFloat($scope.taxPaidCashNonRevcesstx).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidCashNonRevcessintr).toFixed(2),
+                                        text: parseFloat($scope.taxPaidCashNonRevcessintr).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1559,7 +1784,7 @@
                                 [
                                     'Integrated Tax',
                                     {
-                                        text: parseFloat(gstr3bScope.revrs_iamt).toFixed(2),
+                                        text: parseFloat($scope.revrs_iamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1579,7 +1804,7 @@
                                         alignment: 'center'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidCashRevigsttx).toFixed(2),
+                                        text: parseFloat($scope.taxPaidCashRevigsttx).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1594,7 +1819,7 @@
                                 [
                                     'Central Tax',
                                     {
-                                        text: parseFloat(gstr3bScope.revrs_camt).toFixed(2),
+                                        text: parseFloat($scope.revrs_camt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1614,7 +1839,7 @@
                                         alignment: 'center'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidCashRevcgsttx).toFixed(2),
+                                        text: parseFloat($scope.taxPaidCashRevcgsttx).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1629,7 +1854,7 @@
                                 [
                                     'State/UT Tax',
                                     {
-                                        text: parseFloat(gstr3bScope.revrs_samt).toFixed(2),
+                                        text: parseFloat($scope.revrs_samt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1649,7 +1874,7 @@
                                         alignment: 'center'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidCashRevsgsttx).toFixed(2),
+                                        text: parseFloat($scope.taxPaidCashRevsgsttx).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1664,7 +1889,7 @@
                                 [
                                     'Cess',
                                     {
-                                        text: parseFloat(gstr3bScope.revrs_csamt).toFixed(2),
+                                        text: parseFloat($scope.revrs_csamt).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1684,7 +1909,7 @@
                                         alignment: 'center'
                                     },
                                     {
-                                        text: parseFloat(gstr3bScope.taxPaidCashRevcesstx).toFixed(2),
+                                        text: parseFloat($scope.taxPaidCashRevcesstx).toFixed(2),
                                         alignment: 'right'
                                     },
                                     {
@@ -1794,11 +2019,13 @@
 
             };
 
-            //pdfMake.createPdf(dd).download(pdfname);
+            // Instead of downloaing file, write file to console as base64 so we can get it from our headless browser.
+            // NOTE: Make sure to remove 'pdfMake.createPdf(dd).download(pdfname);' line.
             pdfMake.createPdf(dd).getBase64((data) => {
                 console.log("PDF:" + pdfname + ":" + data);
             });
-        }
+        };
+        // #endregion
     </script>
 </head>
 </html>
